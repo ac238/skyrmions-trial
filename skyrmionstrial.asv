@@ -1,17 +1,21 @@
 
 N=50; % num of pts in each direction
 
-% bounds of graph
 % create bounds of graph
-xlow=0;
-ylow=0;
-xhigh=10;
-yhigh=10;
-[xx,yy]=meshgrid(linspace(xlow,xhigh,N),linspace(0,10,N));
+xlow=-5;
+ylow=-5;
+xhigh=5;
+yhigh=5;
+[xx,yy]=meshgrid(linspace(xlow,xhigh,N),linspace(ylow,yhigh,N));
 
+% initialize skyrmion according to QHMF 35
+n=1;
+z_0=0;
+lambda=1;
+omega=((x+y*j)/lambda)^n
 uu=sin(xx);
 vv=5*cos(yy);
 
 % plot
 quiver(xx,yy,uu,vv)
-axis([0 10 0 10])
+axis([xlow xhigh ylow yhigh])
