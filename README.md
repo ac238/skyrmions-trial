@@ -18,7 +18,9 @@ For each index, quiver creates a field of vectors whose components are proportio
 
 % dynamics
 Does numerical calculations to m1_init and m2_init and saves them in m1 and m2. Plots m1 and m2, then saves them in m1_init and m2_init to repeat.
-In this build, the dynamics are a uniform rotation, which doesn't represent anything physical.
+Each term of the equations of motion are added separately so that they may be turned off by setting the values "zeeman" and "landau" to zero.
+The Landau term is broken. It does not preserve the norm of m as 1. Periodic boundary conditions are implemented using the mod function.
+For the Zeeman term, B was chosen to be uniform in the z-direction, causing the skyrmion to rotate.
 
 
 
