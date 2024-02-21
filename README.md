@@ -25,7 +25,7 @@ The Landau-Lifshitz term is broken. It does not preserve the norm of m as 1. Per
 
 % Zeeman term
 For the Zeeman term, B was chosen to be uniform in the z-direction, causing the skyrmion to rotate.
-Heun's method is used, as Euler's method doesn't preserve the norm of m as 1.
+RK4 is used, which preserves the norm of m as 1 and conserves topological charge.
 
 
 
