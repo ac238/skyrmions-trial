@@ -19,8 +19,13 @@ For each index, quiver creates a field of vectors whose components are proportio
 % dynamics
 Does numerical calculations to m1_init and m2_init and saves them in m1 and m2. Plots m1 and m2, then saves them in m1_init and m2_init to repeat.
 Each term of the equations of motion are added separately so that they may be turned off by setting the values "zeeman" and "landau" to zero.
-The Landau term is broken. It does not preserve the norm of m as 1. Periodic boundary conditions are implemented using the mod function.
+
+% Landau-Lifshitz term (broken)
+The Landau-Lifshitz term is broken. It does not preserve the norm of m as 1. Periodic boundary conditions are implemented using the mod function.
+
+% Zeeman term
 For the Zeeman term, B was chosen to be uniform in the z-direction, causing the skyrmion to rotate.
+Heun's method is used, as Euler's method doesn't preserve the norm of m as 1.
 
 
 

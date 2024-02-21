@@ -26,19 +26,19 @@ quiver(xx,yy,m1_init,m2_init)
 axis([xlow xhigh ylow yhigh])
 
 % dynamics
-landau = 0;
+landau = 0; % broken
 zeeman = 1;
 
 t=0;
-t_final=1;
+t_final=10;
 dt=0.001;
 dx=(xhigh-xlow)/N;
 dy=(yhigh-ylow)/N;
-kappa = 0.1;
-gmu = 0.1;
+kappa = 0.01;
+gmuB = 10;
 while t<t_final
-    for x_i = 1:N
-        for y_i = 1:N
+    for x_i = 2:N-1
+        for y_i = 2:N-1
             m1(x_i,y_i) = m1_init(x_i,y_i);
             m2(x_i,y_i) = m2_init(x_i,y_i);
 
@@ -49,9 +49,24 @@ while t<t_final
             m2(x_i,y_i) = m2(x_i,y_i) - dt*( landau*kappa*( m1_init(x_i,y_i)*(m3_init(mod(x_i-2,N)+1,y_i)-2*m3_init(x_i,y_i)+m3_init(mod(x_i,N)+1,y_i))/dx^2 + (m3_init(x_i,mod(y_i-2,N)+1)-2*m3_init(x_i,y_i)+m3_init(x_i,mod(y_i,N)+1))/dx^2) );
             
             % Zeeman term
+            m1(x_i,y_i) = m1(x_i,y_i) + dt*zeeman*gmuB*m2_init(x_i,y_i);
+            m2(x_i,y_i) = m2(x_i,y_i) - dt*zeeman*gmuB*m1_init(x_i,y_i);
 
+            % Pontryagin density (triple product, not solid angle)
+            m_vec = []
+            rho_t(x_i,y_i) = 1/(4*pi*dx*dy)*det([m1_init(x_i,y_i) m2_init(x_i,y_i) m3_init(x_i,y_i);m1_init(mod(x_i,N)+1,y_i) m2_init(mod(x_i,N)+1,y_i) m3_init(mod(x_i,N)+1,y_i);m1_init(x_i,mod(y_i,N)+1) m2_init(x_i,mod(y_i,N)+1) m3_init(x_i,mod(y_i,N)+1)]);
+            rho(x_i,y_i) = 
         end
     end
+
+    % topological charge of previous frame
+    Q=0;
+    for x_i = 1:N
+        for y_i = 1:N
+            Q = Q + rho_t(x_i,y_i)/dx/dy;
+        end
+    end
+    Q
     
     % plot
     quiver(xx,yy,m1,m2)
