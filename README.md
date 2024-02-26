@@ -17,8 +17,9 @@ First, the x- and y-positions are redefined as the real and imaginary axis of z.
 Does numerical calculations to m1_init, m2_init, m3_init and saves them in m1, m2, m3. Plots m1 and m2, then saves them all in m1_init, m2_init, m3_init to repeat.
 Each term of the equations of motion are added separately so that they may be turned off by setting the values "zeeman" and "landau" to zero.
 
-% Landau-Lifshitz term (broken)
-The Landau-Lifshitz term is broken. It does not preserve the norm of m as 1. Periodic boundary conditions are implemented using the mod function.
+% Landau-Lifshitz term
+This term causes the skyrmion to spread out.
+RK4 is used, but it does not conserve topological charge; this needs to be addressed.
 
 % Zeeman term
 For the Zeeman term, B was chosen to be uniform in the z-direction, causing the skyrmion to rotate.
