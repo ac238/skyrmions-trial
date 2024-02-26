@@ -27,6 +27,17 @@ The Landau-Lifshitz term is broken. It does not preserve the norm of m as 1. Per
 For the Zeeman term, B was chosen to be uniform in the z-direction, causing the skyrmion to rotate.
 RK4 is used, which preserves the norm of m as 1 and conserves topological charge.
 
+% Pontryagin density (broken)
+I used the solid-angle method with the intent to exactly calculate the numerical Pontryagin density.
+In its current form the topological charge is conserved through application of the Zeeman field, but it does not equal -n as it should. Here are some values:
+    -3  0.0015
+    -2  0.0290
+    -1  0.4245
+    0   0
+    1   -6.0349
+    2   -0.4615
+    3   -0.0242
+
 
 
 

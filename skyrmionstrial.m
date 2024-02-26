@@ -9,7 +9,7 @@ yhigh=50;
 [xx,yy]=meshgrid(linspace(xlow,xhigh,N),linspace(ylow,yhigh,N));
 
 % initialize skyrmion according to QHMF 35
-n=-1;
+n=3;
 z_0=0;
 lambda=10;
 omega = ((xx + yy*1i - z_0)/lambda).^n;
@@ -63,12 +63,17 @@ while t<t_final
 
     % Pontryagin density
     m3 = sqrt(1 - (m1).^2 - (m2).^2);
-    triple = 1/(dx*dy)*( m1(1:N-1,1:N-1).*m2(2:N,1:N-1).*m3(1:N-1,2:N) + m2(1:N-1,1:N-1).*m3(2:N,1:N-1).*m1(1:N-1,2:N) + m3(1:N-1,1:N-1).*m1(2:N,1:N-1).*m2(1:N-1,2:N) - m1(1:N-1,1:N-1).*m3(2:N,1:N-1).*m2(1:N-1,2:N) - m3(1:N-1,1:N-1).*m2(2:N,1:N-1).*m1(1:N-1,2:N) - m2(1:N-1,1:N-1).*m1(2:N,1:N-1).*m3(1:N-1,2:N) );
-    
+    mag_m = sqrt((m1).^2+(m2).^2+(m3).^2);
+    m_dot_mx = m1(1:N-1,1:N-1).*m1(2:N,1:N-1) + m2(1:N-1,1:N-1).*m2(2:N,1:N-1) + m3(1:N-1,1:N-1).*m3(2:N,1:N-1);
+    m_dot_my = m1(1:N-1,1:N-1).*m1(1:N-1,2:N) + m2(1:N-1,1:N-1).*m2(1:N-1,2:N) + m3(1:N-1,1:N-1).*m3(1:N-1,2:N);
+    mx_dot_my = m1(2:N,1:N-1).*m1(1:N-1,2:N) + m2(2:N,1:N-1).*m2(1:N-1,2:N) + m3(2:N,1:N-1).*m3(1:N-1,2:N);
+    triple = ( m1(1:N-1,1:N-1).*(m2(2:N,1:N-1)-m2(1:N-1,1:N-1)).*(m3(1:N-1,2:N)-m3(1:N-1,1:N-1)) + m2(1:N-1,1:N-1).*(m3(2:N,1:N-1)-m3(1:N-1,1:N-1)).*(m1(1:N-1,2:N)-m1(1:N-1,1:N-1)) + m3(1:N-1,1:N-1).*(m1(2:N,1:N-1)-m1(1:N-1,1:N-1)).*(m2(1:N-1,2:N)-m2(1:N-1,1:N-1)) - m1(1:N-1,1:N-1).*(m3(2:N,1:N-1)-m3(1:N-1,1:N-1)).*(m2(1:N-1,2:N)-m2(1:N-1,1:N-1)) - m3(1:N-1,1:N-1).*(m2(2:N,1:N-1)-m2(1:N-1,1:N-1)).*(m1(1:N-1,2:N)-m1(1:N-1,1:N-1)) - m2(1:N-1,1:N-1).*(m1(2:N,1:N-1)-m1(1:N-1,1:N-1)).*(m3(1:N-1,2:N)-m3(1:N-1,1:N-1)) );
+    denom = mag_m(1:N-1,1:N-1).*mag_m(2:N,1:N-1).*mag_m(1:N-1,2:N) + m_dot_mx.*mag_m(1:N-1,2:N) + m_dot_my.*mag_m(2:N,1:N-1) + mx_dot_my.*mag_m(1:N-1,1:N-1);
+    rho = 4*atan2(triple,denom);
 
 
     % topological charge of previous frame
-    Q=sum(sum(triple))/(4*pi)
+    Q=sum(sum(rho))*dx*dy
     
     % plot
     quiver(xx,yy,m1,m2)
