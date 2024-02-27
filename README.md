@@ -19,7 +19,7 @@ Each term of the equations of motion are added separately so that they may be tu
 
 % Landau-Lifshitz term
 This term causes the skyrmion to spread out.
-RK4 is used, but it does not conserve topological charge; this needs to be addressed.
+RK4 is used, but it does not conserve abs(m)=1; this is not physical and needs to be addressed.
 
 % Zeeman term
 For the Zeeman term, B was chosen to be uniform in the z-direction, causing the skyrmion to rotate.
@@ -32,7 +32,7 @@ The solid-angle formula is complicated, so I calculated it in pieces. For any pa
 
 % Topological charge
 I numerically integrated rho over all space to find Q, the topological charge.
-If the skyrmion is not entirely contained within the boundaries, the topological charge is given as slightly less than abs(n).
+I used periodic indexing so that Q should always be exactly an integer. If this isn't the case when a dynamical term is turned on, then there is an issue.
 The sign of Q is always positive; this needs to be fixed.
 
 % plot
