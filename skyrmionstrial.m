@@ -9,7 +9,7 @@ yhigh=50;
 [xx,yy]=meshgrid(linspace(xlow,xhigh,N),linspace(ylow,yhigh,N));
 
 % initialize skyrmion according to QHMF 35
-n=-1;
+n=-2;
 z_0=0;
 lambda=20;
 
@@ -23,17 +23,25 @@ quiver(xx,yy,m1_init,m2_init)
 axis([xlow xhigh ylow yhigh])
 
 % dynamics
-landau = 0;
+landau = 1; % change to 0/1 to turn off/on effects
 zeeman = 1;
+coulomb = 0;
+electric = 1;
 
 t=0;
-t_final=1;
+t_final=0.1;
 dt=0.001;
 dx=(xhigh-xlow)/(N-1);
 dy=(yhigh-ylow)/(N-1);
-kappa = 1000;
+kappa = 1000;     % change strengths of effects
 gmuB = 10;
 q = 1;
+Q_top = -n;
+E_B_list = []; % store values for final plot
+E_A_list = [];
+E_LL_list = [];
+E_C_list = [];
+E_El_list = [];
 while t<t_final
 
     m1 = m1_init;
@@ -51,6 +59,9 @@ while t<t_final
     m2_k4 = -gmuB*(m1_init+dt*m1_k3);
     m1 = m1 + zeeman*dt/6*(m1_k1 + 2*m1_k2 + 2*m1_k3 + m1_k4);
     m2 = m2 + zeeman*dt/6*(m2_k1 + 2*m2_k2 + 2*m2_k3 + m2_k4);
+
+    % Electric field term
+
 
     % L-L term with RK4 (only works for dx=dy) (doesn't conserve norm=1) (needs periodic boundaries)
     m1_k1 = kappa/(dx^2) * (m2_init(2:N-1,2:N-1).*(m3_init(1:N-2,2:N-1)+m3_init(3:N,2:N-1)+m3_init(2:N-1,1:N-2)+m3_init(2:N-1,3:N)-4*m3_init(2:N-1,2:N-1)) - m3_init(2:N-1,2:N-1).*(m2_init(1:N-2,2:N-1)+m2_init(3:N,2:N-1)+m2_init(2:N-1,1:N-2)+m2_init(2:N-1,3:N)-4*m2_init(2:N-1,2:N-1)));
@@ -128,11 +139,33 @@ while t<t_final
     %        coulomb_int_y = coulomb_int_y + y_interact;
     %    end
     %end
+    %m1 = m1 + coulomb*coulomb_int_x.*(m1(:,mod(-1:N-2,N)+1)+m1(:,mod(1:N,N)+1))./(2*dy) - coulomb*coulomb_int_y.*(m1(mod(-1:N-2,N)+1,:)+m1(mod(1:N,N)+1,:))./(2*dx);
+    %m2 = m2 + coulomb*coulomb_int_x.*(m2(:,mod(-1:N-2,N)+1)+m2(:,mod(1:N,N)+1))./(2*dy) - coulomb*coulomb_int_y.*(m2(mod(-1:N-2,N)+1,:)+m2(mod(1:N,N)+1,:))./(2*dx);
+    %m3 = m3 + coulomb*coulomb_int_x.*(m3(:,mod(-1:N-2,N)+1)+m3(:,mod(1:N,N)+1))./(2*dy) - coulomb*coulomb_int_y.*(m3(mod(-1:N-2,N)+1,:)+m3(mod(1:N,N)+1,:))./(2*dx);
 
 
     % check conserved quantities
+    Q_top_init = Q_top;
     Q_top=sum(sum(rho))*dx*dy  % topological charge
     S_z=sum(sum(m3));           % total spin in z-direction
+    
+    m1_dx=(m1(mod(1:N,N)+1,:)-m1(mod(-1:N-2,N)+1,:))/(2*dx); 
+    m1_dy=(m1(:,mod(1:N,N)+1)-m1(:,mod(-1:N-2,N)+1))/(2*dy);
+    m2_dx=(m2(mod(1:N,N)+1,:)-m2(mod(-1:N-2,N)+1,:))/(2*dx); 
+    m2_dy=(m2(:,mod(1:N,N)+1)-m2(:,mod(-1:N-2,N)+1))/(2*dy);
+    m3_dx=(m3(mod(1:N,N)+1,:)-m3(mod(-1:N-2,N)+1,:))/(2*dx); 
+    m3_dy=(m3(:,mod(1:N,N)+1)-m3(:,mod(-1:N-2,N)+1))/(2*dy);
+
+    E_B = gmuB*S_z;    % B energy
+    E_A = 4*pi*(yhigh-ylow)*(xhigh-xlow)*(Q_top-Q_top_init)/dt;     % A energy, should be zero if Q_top is conserved
+    E_LL = sum(sum(-kappa/2 * (m1_dx.^2 + m1_dy.^2 + m2_dx.^2 + m2_dy.^2 + m3_dx.^2 + m3_dy.^2)));   % stiffness energy
+    E_C = 0;   % Coulomb energy (need to do)
+    E_El = 0;   % Applied electric field energy
+    E_B_list(length(E_B_list)+1)=E_B;
+    E_A_list(length(E_A_list)+1)=E_A;
+    E_LL_list(length(E_LL_list)+1)=E_LL;
+    E_C_list(length(E_C_list)+1)=E_C;
+    E_El_list(length(E_El_list)+1)=E_El;
 
     % check norm is preserved
     m_norm=m1.^2+m2.^2+m3.^2;
@@ -152,5 +185,8 @@ while t<t_final
     m3_init=m3;
     t=t+dt;
 end
+
+plot(1:length(E_A_list),E_A_list,1:length(E_B_list),E_B_list,1:length(E_LL_list),E_LL_list)
+
 
 

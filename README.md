@@ -42,6 +42,11 @@ For each index, quiver creates a field of vectors whose components are proportio
 The contour plot is of rho, the Pontryagin density, but it can be changed to check other unseen values such as m3 or norm_m (to ensure it is preserved).
 A line of code is present which can be uncommented to replace the graphs with a single "slice" of the skyrmion along the x-axis.
 
+% check conserved quantities
+Calculates conserved quantities such as S_z and various types of energy.
+Only the Zeeman, A, and stiffness terms have been implemented; Coulomb and electric field are coming soon.
+Plots them over time after all time is elapsed.
+
 
 
 
