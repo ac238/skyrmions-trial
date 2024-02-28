@@ -29,13 +29,14 @@ coulomb = 0;
 electric = 1;
 
 t=0;
-t_final=0.1;
+t_final=0.3;
 dt=0.001;
 dx=(xhigh-xlow)/(N-1);
 dy=(yhigh-ylow)/(N-1);
 kappa = 1000;     % change strengths of effects
 gmuB = 10;
 q = 1;
+El = 10;
 Q_top = -n;
 E_B_list = []; % store values for final plot
 E_A_list = [];
@@ -49,19 +50,29 @@ while t<t_final
     m3 = m3_init;
 
     % Zeeman term with RK4
-    m1_k1 = gmuB*m2_init;
-    m2_k1 = -gmuB*m1_init;
-    m1_k2 = gmuB*(m2_init+dt/2*m2_k1);
-    m2_k2 = -gmuB*(m1_init+dt/2*m1_k1);
-    m1_k3 = gmuB*(m2_init+dt/2*m2_k2);
-    m2_k3 = -gmuB*(m1_init+dt/2*m1_k2);
-    m1_k4 = gmuB*(m2_init+dt*m2_k3);
-    m2_k4 = -gmuB*(m1_init+dt*m1_k3);
+    m1_k1 = gmuB*m2;
+    m2_k1 = -gmuB*m1;
+    m1_k2 = gmuB*(m2+dt/2*m2_k1);
+    m2_k2 = -gmuB*(m1+dt/2*m1_k1);
+    m1_k3 = gmuB*(m2+dt/2*m2_k2);
+    m2_k3 = -gmuB*(m1+dt/2*m1_k2);
+    m1_k4 = gmuB*(m2+dt*m2_k3);
+    m2_k4 = -gmuB*(m1+dt*m1_k3);
     m1 = m1 + zeeman*dt/6*(m1_k1 + 2*m1_k2 + 2*m1_k3 + m1_k4);
     m2 = m2 + zeeman*dt/6*(m2_k1 + 2*m2_k2 + 2*m2_k3 + m2_k4);
 
-    % Electric field term
+    % Electric field term with RK4
+    m1_k1 = El*(m1(:,mod(-1:N-2,N)+1)-m1(:,mod(1:N,N)+1))/(2*dy);
+    m2_k1 = El*(m2(:,mod(-1:N-2,N)+1)-m2(:,mod(1:N,N)+1))/(2*dy);
+    m1_k2 = El*(m1(:,mod(-1:N-2,N)+1)-m1(:,mod(1:N,N)+1) + dt/2*(m1_k1(:,mod(-1:N-2,N)+1)-m1_k1(:,mod(1:N,N)+1)))/(2*dy);
+    m2_k2 = El*(m2(:,mod(-1:N-2,N)+1)-m2(:,mod(1:N,N)+1) + dt/2*(m2_k1(:,mod(-1:N-2,N)+1)-m2_k1(:,mod(1:N,N)+1)))/(2*dy);
+    m1_k3 = El*(m1(:,mod(-1:N-2,N)+1)-m1(:,mod(1:N,N)+1) + dt/2*(m1_k2(:,mod(-1:N-2,N)+1)-m1_k2(:,mod(1:N,N)+1)))/(2*dy);
+    m2_k3 = El*(m2(:,mod(-1:N-2,N)+1)-m2(:,mod(1:N,N)+1) + dt/2*(m2_k2(:,mod(-1:N-2,N)+1)-m2_k2(:,mod(1:N,N)+1)))/(2*dy);
+    m1_k4 = El*(m1(:,mod(-1:N-2,N)+1)-m1(:,mod(1:N,N)+1) + dt*(m1_k3(:,mod(-1:N-2,N)+1)-m1_k3(:,mod(1:N,N)+1)))/(2*dy);
+    m2_k4 = El*(m2(:,mod(-1:N-2,N)+1)-m2(:,mod(1:N,N)+1) + dt*(m2_k3(:,mod(-1:N-2,N)+1)-m2_k3(:,mod(1:N,N)+1)))/(2*dy);
 
+    m1 = m1 + electric*dt/6*(m1_k1 + 2*m1_k2 + 2*m1_k3 + m1_k4);
+    m2 = m2 + electric*dt/6*(m2_k1 + 2*m2_k2 + 2*m2_k3 + m2_k4);
 
     % L-L term with RK4 (only works for dx=dy) (doesn't conserve norm=1) (needs periodic boundaries)
     m1_k1 = kappa/(dx^2) * (m2_init(2:N-1,2:N-1).*(m3_init(1:N-2,2:N-1)+m3_init(3:N,2:N-1)+m3_init(2:N-1,1:N-2)+m3_init(2:N-1,3:N)-4*m3_init(2:N-1,2:N-1)) - m3_init(2:N-1,2:N-1).*(m2_init(1:N-2,2:N-1)+m2_init(3:N,2:N-1)+m2_init(2:N-1,1:N-2)+m2_init(2:N-1,3:N)-4*m2_init(2:N-1,2:N-1)));
@@ -160,7 +171,7 @@ while t<t_final
     E_A = 4*pi*(yhigh-ylow)*(xhigh-xlow)*(Q_top-Q_top_init)/dt;     % A energy, should be zero if Q_top is conserved
     E_LL = sum(sum(-kappa/2 * (m1_dx.^2 + m1_dy.^2 + m2_dx.^2 + m2_dy.^2 + m3_dx.^2 + m3_dy.^2)));   % stiffness energy
     E_C = 0;   % Coulomb energy (need to do)
-    E_El = 0;   % Applied electric field energy
+    E_El = El*sum(sum(xx.*rho));   % Applied electric field energy
     E_B_list(length(E_B_list)+1)=E_B;
     E_A_list(length(E_A_list)+1)=E_A;
     E_LL_list(length(E_LL_list)+1)=E_LL;
@@ -186,7 +197,7 @@ while t<t_final
     t=t+dt;
 end
 
-plot(1:length(E_A_list),E_A_list,1:length(E_B_list),E_B_list,1:length(E_LL_list),E_LL_list)
+plot(1:length(E_A_list),E_A_list,1:length(E_B_list),E_B_list,1:length(E_LL_list),E_LL_list,1:length(E_El_list),E_El_list)
 
 
 

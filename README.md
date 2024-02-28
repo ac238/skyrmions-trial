@@ -17,15 +17,20 @@ First, the x- and y-positions are redefined as the real and imaginary axis of z.
 Does numerical calculations to m1_init, m2_init, m3_init and saves them in m1, m2, m3. Plots m1 and m2, then saves them all in m1_init, m2_init, m3_init to repeat.
 Each term of the equations of motion are added separately so that they may be turned off by setting the values "zeeman" and "landau" to zero.
 
-% Landau-Lifshitz term
-This term causes the skyrmion to spread out.
-The strength coefficient is kappa=(rho_s)/(s*n), where rho_s is the spin stiffness, s is the spin Casimir, and n is the particle number density.
-RK4 is used, but it does not conserve abs(m)=1; this is not physical and needs to be addressed.
-
 % Zeeman term
 For the Zeeman term, B was chosen to be uniform in the z-direction, causing the magnetization field vectors to rotate in the xy-plane.
 The strength coefficient is gmuB=g*mu*B, where g is the g-factor, mu is the magneton, and B is the magnetic field strength.
 RK4 is used, which preserves the norm of m as 1 and conserves topological charge.
+
+% Electric field term
+For the electric field term, E was chosen to be uniform in the x-direction, causing the skyrmion to move to the right.
+RK4 is used, but the skyrmion's shape is not preserved. This needs to be fixed.
+El = e*E/(4*pi*s*n)
+
+% Landau-Lifshitz term
+This term causes the skyrmion to spread out.
+The strength coefficient is kappa=(rho_s)/(s*n), where rho_s is the spin stiffness, s is the spin Casimir, and n is the particle number density.
+RK4 is used, but it does not conserve abs(m)=1; this is not physical and needs to be addressed.
 
 % Pontryagin density
 I used the solid-angle method with the intent to exactly calculate the numerical Pontryagin density.
