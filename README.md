@@ -19,10 +19,12 @@ Each term of the equations of motion are added separately so that they may be tu
 
 % Landau-Lifshitz term
 This term causes the skyrmion to spread out.
+The strength coefficient is kappa=(rho_s)/(s*n), where rho_s is the spin stiffness, s is the spin Casimir, and n is the particle number density.
 RK4 is used, but it does not conserve abs(m)=1; this is not physical and needs to be addressed.
 
 % Zeeman term
-For the Zeeman term, B was chosen to be uniform in the z-direction, causing the skyrmion to rotate.
+For the Zeeman term, B was chosen to be uniform in the z-direction, causing the magnetization field vectors to rotate in the xy-plane.
+The strength coefficient is gmuB=g*mu*B, where g is the g-factor, mu is the magneton, and B is the magnetic field strength.
 RK4 is used, which preserves the norm of m as 1 and conserves topological charge.
 
 % Pontryagin density
@@ -31,13 +33,14 @@ The numerical Pontryagin density is equal to the solid angle between m and its n
 The solid-angle formula is complicated, so I calculated it in pieces. For any parts that used the magnitude, I simply substituted 1.
 
 % Topological charge
-I numerically integrated rho over all space to find Q, the topological charge.
-I used periodic indexing so that Q should always be exactly an integer. If this isn't the case when a dynamical term is turned on, then there is an issue.
-The sign of Q is always positive; this needs to be fixed.
+I numerically integrated rho over all space to find Q_top, the topological charge.
+I used periodic indexing so that Q_top should always be exactly an integer. If this isn't the case when a dynamical term is turned on, then there is an issue.
+The sign of Q_top is always positive; this needs to be fixed.
 
 % plot
 For each index, quiver creates a field of vectors whose components are proportional to m1 and m2 at positions xx and yy.
-The contour plot is of rho, the Pontryagin density.
+The contour plot is of rho, the Pontryagin density, but it can be changed to check other unseen values such as m3 or norm_m (to ensure it is preserved).
+A line of code is present which can be uncommented to replace the graphs with a single "slice" of the skyrmion along the x-axis.
 
 
 
