@@ -24,16 +24,16 @@ axis([xlow xhigh ylow yhigh])
 
 % dynamics
 landau = 1; % change to 0/1 to turn off/on effects
-zeeman = 0;
+zeeman = 1;
 coulomb = 0;
-electric = 0;
+electric = 1;
 
 t=0;
-t_final=0.5;
+t_final=1;
 dt=0.001;
 dx=(xhigh-xlow)/(N-1);
 dy=(yhigh-ylow)/(N-1);
-kappa = 10;     % change strengths of effects
+kappa = 1000;     % change strengths of effects
 gmuB = 10;
 q = 10;
 El = 100;
@@ -68,59 +68,18 @@ while t<t_final
     m = m + electric*dt/6*(m_k1 + 2*m_k2 + 2*m_k3 + m_k4);
 
     % L-L term with RK4 (only works for dx=dy) (doesn't conserve norm=1) (needs periodic boundaries)
-    m1_k1 = kappa/(dx^2) * (m(2:N-1,2:N-1,2).*(m(1:N-2,2:N-1,3)+m(3:N,2:N-1,3)+m(2:N-1,1:N-2,3)+m(2:N-1,3:N,3)-4*m(2:N-1,2:N-1,3)) - m(2:N-1,2:N-1,3).*(m(1:N-2,2:N-1,2)+m(3:N,2:N-1,2)+m(2:N-1,1:N-2,2)+m(2:N-1,3:N,2)-4*m(2:N-1,2:N-1,2)));
-    m2_k1 = kappa/(dx^2) * (m(2:N-1,2:N-1,3).*(m(1:N-2,2:N-1,1)+m(3:N,2:N-1,1)+m(2:N-1,1:N-2,1)+m(2:N-1,3:N,1)-4*m(2:N-1,2:N-1,1)) - m(2:N-1,2:N-1,1).*(m(1:N-2,2:N-1,3)+m(3:N,2:N-1,3)+m(2:N-1,1:N-2,3)+m(2:N-1,3:N,3)-4*m(2:N-1,2:N-1,3)));
-    m3_k1 = kappa/(dx^2) * (m(2:N-1,2:N-1,1).*(m(1:N-2,2:N-1,2)+m(3:N,2:N-1,2)+m(2:N-1,1:N-2,2)+m(2:N-1,3:N,2)-4*m(2:N-1,2:N-1,2)) - m(2:N-1,2:N-1,2).*(m(1:N-2,2:N-1,1)+m(3:N,2:N-1,1)+m(2:N-1,1:N-2,1)+m(2:N-1,3:N,1)-4*m(2:N-1,2:N-1,1)));
-    m_k1 = kappa/(dx^2) * (m(2:N-1,2:N-1,mod(1:3,3)+1).*(m(1:N-2,2:N-1,mod(2:4,3)+1)+m(3:N,2:N-1,mod(2:4,3)+1)+m(2:N-1,1:N-2,mod(2:4,3)+1)+m(2:N-1,3:N,mod(2:4,3)+1)-4*m(2:N-1,2:N-1,mod(2:4,3)+1)) - m(2:N-1,2:N-1,mod(2:4,3)+1).*(m(1:N-2,2:N-1,mod(1:3,3)+1)+m(3:N,2:N-1,mod(1:3,3)+1)+m(2:N-1,1:N-2,mod(1:3,3)+1)+m(2:N-1,3:N,mod(1:3,3)+1)-4*m(2:N-1,2:N-1,mod(1:3,3)+1)));
+    m_k1 = kappa/(dx^2) * (m(1:N,1:N,mod(1:3,3)+1).*(m(mod(-1:N-2,N)+1,1:N,mod(2:4,3)+1)+m(mod(1:N,N)+1,1:N,mod(2:4,3)+1)+m(1:N,mod(-1:N-2,N)+1,mod(2:4,3)+1)+m(1:N,mod(1:N,N)+1,mod(2:4,3)+1)-4*m(1:N,1:N,mod(2:4,3)+1)) - m(1:N,1:N,mod(2:4,3)+1).*(m(mod(-1:N-2,N)+1,1:N,mod(1:3,3)+1)+m(mod(1:N,N)+1,1:N,mod(1:3,3)+1)+m(1:N,mod(-1:N-2,N)+1,mod(1:3,3)+1)+m(1:N,mod(1:N,N)+1,mod(1:3,3)+1)-4*m(1:N,1:N,mod(1:3,3)+1)));
     
-    m1_k1_expand = zeros(N,N);
-    m1_k1_expand(2:N-1,2:N-1)=m1_k1;
-    m2_k1_expand = zeros(N,N);
-    m2_k1_expand(2:N-1,2:N-1)=m2_k1;
-    m3_k1_expand = zeros(N,N);
-    m3_k1_expand(2:N-1,2:N-1)=m3_k1;
-    m_k1_expand = zeros(N,N,3);
-    m_k1_expand(2:N-1,2:N-1,:)=m_k1;
-    m1_k2arg = m(:,:,1)+dt/2*m1_k1_expand;
-    m2_k2arg = m(:,:,2)+dt/2*m2_k1_expand;
-    m3_k2arg = m(:,:,3)+dt/2*m3_k1_expand;
-    m_k2arg = m+dt/2*m_k1_expand;
-    m1_k2 = kappa/(dx^2) * (m2_k2arg(2:N-1,2:N-1).*(m3_k2arg(1:N-2,2:N-1)+m3_k2arg(3:N,2:N-1)+m3_k2arg(2:N-1,1:N-2)+m3_k2arg(2:N-1,3:N)-4*m3_k2arg(2:N-1,2:N-1)) - m3_k2arg(2:N-1,2:N-1).*(m2_k2arg(1:N-2,2:N-1)+m2_k2arg(3:N,2:N-1)+m2_k2arg(2:N-1,1:N-2)+m2_k2arg(2:N-1,3:N)-4*m2_k2arg(2:N-1,2:N-1)));
-    m2_k2 = kappa/(dx^2) * (m3_k2arg(2:N-1,2:N-1).*(m1_k2arg(1:N-2,2:N-1)+m1_k2arg(3:N,2:N-1)+m1_k2arg(2:N-1,1:N-2)+m1_k2arg(2:N-1,3:N)-4*m1_k2arg(2:N-1,2:N-1)) - m1_k2arg(2:N-1,2:N-1).*(m3_k2arg(1:N-2,2:N-1)+m3_k2arg(3:N,2:N-1)+m3_k2arg(2:N-1,1:N-2)+m3_k2arg(2:N-1,3:N)-4*m3_k2arg(2:N-1,2:N-1)));
-    m3_k2 = kappa/(dx^2) * (m1_k2arg(2:N-1,2:N-1).*(m2_k2arg(1:N-2,2:N-1)+m2_k2arg(3:N,2:N-1)+m2_k2arg(2:N-1,1:N-2)+m2_k2arg(2:N-1,3:N)-4*m2_k2arg(2:N-1,2:N-1)) - m2_k2arg(2:N-1,2:N-1).*(m1_k2arg(1:N-2,2:N-1)+m1_k2arg(3:N,2:N-1)+m1_k2arg(2:N-1,1:N-2)+m1_k2arg(2:N-1,3:N)-4*m1_k2arg(2:N-1,2:N-1)));
-    m_k2 = kappa/(dx^2) * (m_k2arg(2:N-1,2:N-1,mod(1:3,3)+1).*(m_k2arg(1:N-2,2:N-1,mod(2:4,3)+1)+m_k2arg(3:N,2:N-1,mod(2:4,3)+1)+m_k2arg(2:N-1,1:N-2,mod(2:4,3)+1)+m_k2arg(2:N-1,3:N,mod(2:4,3)+1)-4*m_k2arg(2:N-1,2:N-1,mod(2:4,3)+1)) - m_k2arg(2:N-1,2:N-1,mod(2:4,3)+1).*(m_k2arg(1:N-2,2:N-1,mod(1:3,3)+1)+m_k2arg(3:N,2:N-1,mod(1:3,3)+1)+m_k2arg(2:N-1,1:N-2,mod(1:3,3)+1)+m_k2arg(2:N-1,3:N,mod(1:3,3)+1)-4*m_k2arg(2:N-1,2:N-1,mod(1:3,3)+1)));
+    m_k2arg = m+dt/2*m_k1;
+    m_k2 = kappa/(dx^2) * (m_k2arg(1:N,1:N,mod(1:3,3)+1).*(m_k2arg(mod(-1:N-2,N)+1,1:N,mod(2:4,3)+1)+m_k2arg(mod(1:N,N)+1,1:N,mod(2:4,3)+1)+m_k2arg(1:N,mod(-1:N-2,N)+1,mod(2:4,3)+1)+m_k2arg(1:N,mod(1:N,N)+1,mod(2:4,3)+1)-4*m_k2arg(1:N,1:N,mod(2:4,3)+1)) - m_k2arg(1:N,1:N,mod(2:4,3)+1).*(m_k2arg(mod(-1:N-2,N)+1,1:N,mod(1:3,3)+1)+m_k2arg(mod(1:N,N)+1,1:N,mod(1:3,3)+1)+m_k2arg(1:N,mod(-1:N-2,N)+1,mod(1:3,3)+1)+m_k2arg(1:N,mod(1:N,N)+1,mod(1:3,3)+1)-4*m_k2arg(1:N,1:N,mod(1:3,3)+1)));
     
-    m1_k2_expand = zeros(N,N);
-    m1_k2_expand(2:N-1,2:N-1)=m1_k2;
-    m2_k2_expand = zeros(N,N);
-    m2_k2_expand(2:N-1,2:N-1)=m2_k2;
-    m3_k2_expand = zeros(N,N);
-    m3_k2_expand(2:N-1,2:N-1)=m3_k2;
-    m_k2_expand = zeros(N,N,3);
-    m_k1_expand(2:N-1,2:N-1,:)=m_k1;
-    m1_k3arg = m(:,:,1)+dt/2*m1_k2_expand;
-    m2_k3arg = m(:,:,2)+dt/2*m2_k2_expand;
-    m3_k3arg = m(:,:,3)+dt/2*m3_k2_expand;
-    m1_k3 = kappa/(dx^2) * (m2_k3arg(2:N-1,2:N-1).*(m3_k3arg(1:N-2,2:N-1)+m3_k3arg(3:N,2:N-1)+m3_k3arg(2:N-1,1:N-2)+m3_k3arg(2:N-1,3:N)-4*m3_k3arg(2:N-1,2:N-1)) - m3_k3arg(2:N-1,2:N-1).*(m2_k3arg(1:N-2,2:N-1)+m2_k3arg(3:N,2:N-1)+m2_k3arg(2:N-1,1:N-2)+m2_k3arg(2:N-1,3:N)-4*m2_k3arg(2:N-1,2:N-1)));
-    m2_k3 = kappa/(dx^2) * (m3_k3arg(2:N-1,2:N-1).*(m1_k3arg(1:N-2,2:N-1)+m1_k3arg(3:N,2:N-1)+m1_k3arg(2:N-1,1:N-2)+m1_k3arg(2:N-1,3:N)-4*m1_k3arg(2:N-1,2:N-1)) - m1_k3arg(2:N-1,2:N-1).*(m3_k3arg(1:N-2,2:N-1)+m3_k3arg(3:N,2:N-1)+m3_k3arg(2:N-1,1:N-2)+m3_k3arg(2:N-1,3:N)-4*m3_k3arg(2:N-1,2:N-1)));
-    m3_k3 = kappa/(dx^2) * (m1_k3arg(2:N-1,2:N-1).*(m2_k3arg(1:N-2,2:N-1)+m2_k3arg(3:N,2:N-1)+m2_k3arg(2:N-1,1:N-2)+m2_k3arg(2:N-1,3:N)-4*m2_k3arg(2:N-1,2:N-1)) - m2_k3arg(2:N-1,2:N-1).*(m1_k3arg(1:N-2,2:N-1)+m1_k3arg(3:N,2:N-1)+m1_k3arg(2:N-1,1:N-2)+m1_k3arg(2:N-1,3:N)-4*m1_k3arg(2:N-1,2:N-1)));
+    m_k3arg = m+dt/2*m_k2;
+    m_k3 = kappa/(dx^2) * (m_k3arg(1:N,1:N,mod(1:3,3)+1).*(m_k3arg(mod(-1:N-2,N)+1,1:N,mod(2:4,3)+1)+m_k3arg(mod(1:N,N)+1,1:N,mod(2:4,3)+1)+m_k3arg(1:N,mod(-1:N-2,N)+1,mod(2:4,3)+1)+m_k3arg(1:N,mod(1:N,N)+1,mod(2:4,3)+1)-4*m_k3arg(1:N,1:N,mod(2:4,3)+1)) - m_k3arg(1:N,1:N,mod(2:4,3)+1).*(m_k3arg(mod(-1:N-2,N)+1,1:N,mod(1:3,3)+1)+m_k3arg(mod(1:N,N)+1,1:N,mod(1:3,3)+1)+m_k3arg(1:N,mod(-1:N-2,N)+1,mod(1:3,3)+1)+m_k3arg(1:N,mod(1:N,N)+1,mod(1:3,3)+1)-4*m_k3arg(1:N,1:N,mod(1:3,3)+1)));
     
-    m1_k3_expand = zeros(N,N);
-    m1_k3_expand(2:N-1,2:N-1)=m1_k3;
-    m2_k3_expand = zeros(N,N);
-    m2_k3_expand(2:N-1,2:N-1)=m2_k3;
-    m3_k3_expand = zeros(N,N);
-    m3_k3_expand(2:N-1,2:N-1)=m3_k3;
-    m1_k4arg = m(:,:,1)+dt*m1_k3_expand;
-    m2_k4arg = m(:,:,2)+dt*m2_k3_expand;
-    m3_k4arg = m(:,:,3)+dt*m3_k3_expand;
-    m1_k4 = kappa/(dx^2) * (m2_k4arg(2:N-1,2:N-1).*(m3_k4arg(1:N-2,2:N-1)+m3_k4arg(3:N,2:N-1)+m3_k4arg(2:N-1,1:N-2)+m3_k4arg(2:N-1,3:N)-4*m3_k4arg(2:N-1,2:N-1)) - m3_k4arg(2:N-1,2:N-1).*(m2_k4arg(1:N-2,2:N-1)+m2_k4arg(3:N,2:N-1)+m2_k4arg(2:N-1,1:N-2)+m2_k4arg(2:N-1,3:N)-4*m2_k4arg(2:N-1,2:N-1)));
-    m2_k4 = kappa/(dx^2) * (m3_k4arg(2:N-1,2:N-1).*(m1_k4arg(1:N-2,2:N-1)+m1_k4arg(3:N,2:N-1)+m1_k4arg(2:N-1,1:N-2)+m1_k4arg(2:N-1,3:N)-4*m1_k4arg(2:N-1,2:N-1)) - m1_k4arg(2:N-1,2:N-1).*(m3_k4arg(1:N-2,2:N-1)+m3_k4arg(3:N,2:N-1)+m3_k4arg(2:N-1,1:N-2)+m3_k4arg(2:N-1,3:N)-4*m3_k4arg(2:N-1,2:N-1)));
-    m3_k4 = kappa/(dx^2) * (m1_k4arg(2:N-1,2:N-1).*(m2_k4arg(1:N-2,2:N-1)+m2_k4arg(3:N,2:N-1)+m2_k4arg(2:N-1,1:N-2)+m2_k4arg(2:N-1,3:N)-4*m2_k4arg(2:N-1,2:N-1)) - m2_k4arg(2:N-1,2:N-1).*(m1_k4arg(1:N-2,2:N-1)+m1_k4arg(3:N,2:N-1)+m1_k4arg(2:N-1,1:N-2)+m1_k4arg(2:N-1,3:N)-4*m1_k4arg(2:N-1,2:N-1)));
+    m_k4arg = m+dt*m_k3;
+    m_k4 = kappa/(dx^2) * (m_k4arg(1:N,1:N,mod(1:3,3)+1).*(m_k4arg(mod(-1:N-2,N)+1,1:N,mod(2:4,3)+1)+m_k4arg(mod(1:N,N)+1,1:N,mod(2:4,3)+1)+m_k4arg(1:N,mod(-1:N-2,N)+1,mod(2:4,3)+1)+m_k4arg(1:N,mod(1:N,N)+1,mod(2:4,3)+1)-4*m_k3arg(1:N,1:N,mod(2:4,3)+1)) - m_k3arg(1:N,1:N,mod(2:4,3)+1).*(m_k3arg(mod(-1:N-2,N)+1,1:N,mod(1:3,3)+1)+m_k3arg(mod(1:N,N)+1,1:N,mod(1:3,3)+1)+m_k3arg(1:N,mod(-1:N-2,N)+1,mod(1:3,3)+1)+m_k3arg(1:N,mod(1:N,N)+1,mod(1:3,3)+1)-4*m_k3arg(1:N,1:N,mod(1:3,3)+1)));
     
-    m(2:N-1,2:N-1,1) = m(2:N-1,2:N-1,1) + landau*dt/6*(m1_k1+2*m1_k2+2*m1_k3+m1_k4);
-    m(2:N-1,2:N-1,2) = m(2:N-1,2:N-1,2) + landau*dt/6*(m2_k1+2*m2_k2+2*m2_k3+m2_k4);
-    m(2:N-1,2:N-1,3) = m(2:N-1,2:N-1,3) + landau*dt/6*(m3_k1+2*m3_k2+2*m3_k3+m3_k4);
+    m(2:N-1,2:N-1,:) = m(2:N-1,2:N-1,:) + landau*dt/6*(m_k1(2:N-1,2:N-1,:)+2*m_k2(2:N-1,2:N-1,:)+2*m_k3+m_k4);
 
     % Pontryagin density
     m_x=m(mod(1:N,N)+1,1:N,:);
