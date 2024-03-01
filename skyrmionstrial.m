@@ -6,11 +6,11 @@ xlow=-50;
 ylow=-50;
 xhigh=50;
 yhigh=50;
-[yy,xx]=meshgrid(linspace(xlow,xhigh,N),linspace(ylow,yhigh,N));
+[yy,xx]=meshgrid(linspace(xlow,xhigh,N),linspace(ylow,yhigh,N)); %xx and yy are swapped to correspond w/ indices
 axis([xlow xhigh ylow yhigh])
 
 % initialize skyrmion according to QHMF 35
-n=-2;
+n=-4;
 z_0=0;
 lambda=20;
 
@@ -23,7 +23,7 @@ m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
 landau = 1; % change to 0/1 to turn off/on effects
 zeeman = 0;
 coulomb = 0;
-electric = 0;
+electric = 1;
 
 t=0;
 t_final=1;
@@ -63,6 +63,7 @@ while t<t_final
     m_k4 = El*(m(:,mod(-1:N-2,N)+1,:)-m(:,mod(1:N,N)+1,:) + dt*(m_k3(:,mod(-1:N-2,N)+1,:)-m_k3(:,mod(1:N,N)+1,:)))/(2*dy);
 
     m = m + electric*dt/6*(m_k1 + 2*m_k2 + 2*m_k3 + m_k4);
+    m = m./(sqrt(sum(m.^2,3))); % Renormalize
 
     % L-L term with RK4 (only works for dx=dy) (doesn't conserve norm=1)
     m_k1 = kappa/(dx^2) * (m(1:N,1:N,mod(1:3,3)+1).*(m(mod(-1:N-2,N)+1,1:N,mod(2:4,3)+1)+m(mod(1:N,N)+1,1:N,mod(2:4,3)+1)+m(1:N,mod(-1:N-2,N)+1,mod(2:4,3)+1)+m(1:N,mod(1:N,N)+1,mod(2:4,3)+1)-4*m(1:N,1:N,mod(2:4,3)+1)) - m(1:N,1:N,mod(2:4,3)+1).*(m(mod(-1:N-2,N)+1,1:N,mod(1:3,3)+1)+m(mod(1:N,N)+1,1:N,mod(1:3,3)+1)+m(1:N,mod(-1:N-2,N)+1,mod(1:3,3)+1)+m(1:N,mod(1:N,N)+1,mod(1:3,3)+1)-4*m(1:N,1:N,mod(1:3,3)+1)));
@@ -77,6 +78,7 @@ while t<t_final
     m_k4 = kappa/(dx^2) * (m_k4arg(1:N,1:N,mod(1:3,3)+1).*(m_k4arg(mod(-1:N-2,N)+1,1:N,mod(2:4,3)+1)+m_k4arg(mod(1:N,N)+1,1:N,mod(2:4,3)+1)+m_k4arg(1:N,mod(-1:N-2,N)+1,mod(2:4,3)+1)+m_k4arg(1:N,mod(1:N,N)+1,mod(2:4,3)+1)-4*m_k4arg(1:N,1:N,mod(2:4,3)+1)) - m_k4arg(1:N,1:N,mod(2:4,3)+1).*(m_k4arg(mod(-1:N-2,N)+1,1:N,mod(1:3,3)+1)+m_k4arg(mod(1:N,N)+1,1:N,mod(1:3,3)+1)+m_k4arg(1:N,mod(-1:N-2,N)+1,mod(1:3,3)+1)+m_k4arg(1:N,mod(1:N,N)+1,mod(1:3,3)+1)-4*m_k4arg(1:N,1:N,mod(1:3,3)+1)));
     
     m = m + landau*dt/6*(m_k1+2*m_k2+2*m_k3+m_k4);
+    m = m./(sqrt(sum(m.^2,3))); % Renormalize
 
     % Pontryagin density
     m_x=m(mod(1:N,N)+1,1:N,:);
@@ -122,13 +124,13 @@ while t<t_final
     E_El_list(length(E_El_list)+1)=E_El;
 
     % check norm is preserved
-    m_norm=[];
+    m_norm=sqrt(sum(m.^2,3));
     
     % plot
     quiver(xx,yy,m(:,:,1),m(:,:,2)) % full 2D vector field
     %quiver(xx(:,N/2),zeros(1,N),m(N/2,:,1),m(N/2,:,3)) % 1D slice
     hold on
-    contour(xx,yy,rho,10) % color plot
+    contour(xx,yy,m_norm,10) % color plot
     hold off
     axis([xlow xhigh ylow yhigh])
     drawnow
@@ -138,7 +140,7 @@ while t<t_final
     t=t+dt;
 end
 
-plot(1:length(E_B_list),E_B_list,1:length(E_LL_list),E_LL_list,1:length(E_El_list),E_El_list)
+%plot(1:length(E_B_list),E_B_list,1:length(E_LL_list),E_LL_list,1:length(E_El_list),E_El_list)
 
 
 

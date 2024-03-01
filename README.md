@@ -6,7 +6,7 @@ A trial project in which I simulate the dynamics of skyrmions using MATLAB.
 % create bounds of graph
 Sets up the set of coordinate points upon which the magnetization vectors will be measured.
 N is the number of points in each direction, and the following four values are the bounds of the graph in units of position.
-[xx,yy] are two NxN arrays which give the x- and y-positions at each index, respectively.
+[yy,xx] are two NxN arrays which give the x- and y-positions at each index, respectively; they are swapped to correspond with the positions of the indices.
 
 % initialize skyrmion according to QHMF 35
 Creates a single skyrmion with charge -n at the point (Re(z_0),Im(z_0)).
