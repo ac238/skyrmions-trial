@@ -36,6 +36,10 @@ I used the solid-angle method with the intent to exactly calculate the numerical
 The numerical Pontryagin density is equal to the solid angle between m and its nearest neighbors divided by 4*pi.
 The solid-angle formula is complicated, so I calculated it in pieces. For any parts that used the magnitude, I simply substituted 1.
 
+% Coulomb term
+I added the Coulomb term with RK1.
+The unchanging parts of the calculation within the for loop were condensed into two larger matrices, dist_x and dist_y, for efficiency.
+
 % Topological charge
 I numerically integrated rho over all space to find Q_top, the topological charge.
 I used periodic indexing so that Q_top should always be exactly an integer. If this isn't the case when a dynamical term is turned on, then there is an issue.
