@@ -37,17 +37,19 @@ end
 
 % dynamics
 landau = 1; % change to 0/1 to turn off/on effects
-zeeman = 0;
+zeeman = 1;
 coulomb = 1;
-electric = 0;
+electric = 1;
 
 t=0;
 t_final=1;
 dt=0.001;
+t_ind=1;
 kappa = 100;     % change strengths of effects
 gmuB = 10;
-q = 1000;
-El = 100;
+q = 100;
+El_amp = 100;
+El_freq = 10;
 Q_top = -n;
 E_B_list = []; % store values for final plot
 E_LL_list = [];
@@ -71,12 +73,13 @@ while t<t_final
     m(:,:,2) = m(:,:,2) + zeeman*dt/6*(m2_k1 + 2*m2_k2 + 2*m2_k3 + m2_k4);
 
     % Electric field term with RK4
-    m_k1 = El*(m(:,mod(-1:N-2,N)+1,:)-m(:,mod(1:N,N)+1,:))/(2*dy);
-    m_k2 = El*(m(:,mod(-1:N-2,N)+1,:)-m(:,mod(1:N,N)+1,:) + dt/2*(m_k1(:,mod(-1:N-2,N)+1,:)-m_k1(:,mod(1:N,N)+1,:)))/(2*dy);
-    m_k3 = El*(m(:,mod(-1:N-2,N)+1,:)-m(:,mod(1:N,N)+1,:) + dt/2*(m_k2(:,mod(-1:N-2,N)+1,:)-m_k2(:,mod(1:N,N)+1,:)))/(2*dy);
-    m_k4 = El*(m(:,mod(-1:N-2,N)+1,:)-m(:,mod(1:N,N)+1,:) + dt*(m_k3(:,mod(-1:N-2,N)+1,:)-m_k3(:,mod(1:N,N)+1,:)))/(2*dy);
+    m_k1 = (m(:,mod(-1:N-2,N)+1,:)-m(:,mod(1:N,N)+1,:))/(2*dy);
+    m_k2 = (m(:,mod(-1:N-2,N)+1,:)-m(:,mod(1:N,N)+1,:) + dt/2*(m_k1(:,mod(-1:N-2,N)+1,:)-m_k1(:,mod(1:N,N)+1,:)))/(2*dy);
+    m_k3 = (m(:,mod(-1:N-2,N)+1,:)-m(:,mod(1:N,N)+1,:) + dt/2*(m_k2(:,mod(-1:N-2,N)+1,:)-m_k2(:,mod(1:N,N)+1,:)))/(2*dy);
+    m_k4 = (m(:,mod(-1:N-2,N)+1,:)-m(:,mod(1:N,N)+1,:) + dt*(m_k3(:,mod(-1:N-2,N)+1,:)-m_k3(:,mod(1:N,N)+1,:)))/(2*dy);
 
-    m = m + electric*dt/6*(m_k1 + 2*m_k2 + 2*m_k3 + m_k4);
+    El = El_amp*cos(El_freq*t);
+    m = m + electric*El*dt/6*(m_k1 + 2*m_k2 + 2*m_k3 + m_k4);
     m = m./(sqrt(sum(m.^2,3))); % Renormalize
 
     % L-L term with RK4 (only works for dx=dy) (doesn't conserve norm=1)
@@ -102,17 +105,49 @@ while t<t_final
     rho = 4*atan2(triple,denom)/(4*pi*dx*dy);
 
     % Coulomb term
-    m_k1=zeros(N,N,3);
-    m_x=(m(mod(1:N,N)+1,1:N,:)-m(mod(-1:N-2,N)+1,1:N,:))/(2*dx);
-    m_y=(m(1:N,mod(1:N,N)+1,:)-m(1:N,mod(-1:N-2,N)+1,:))/(2*dy);
-    for i = 1:N
-        for j = 1:N
-            m_k1 = m_k1 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
+    if coulomb == 1
+        m_k1=zeros(N,N,3);
+        m_x=(m(mod(1:N,N)+1,1:N,:)-m(mod(-1:N-2,N)+1,1:N,:))/(2*dx);
+        m_y=(m(1:N,mod(1:N,N)+1,:)-m(1:N,mod(-1:N-2,N)+1,:))/(2*dy);
+        for i = 1:N
+            for j = 1:N
+                m_k1 = m_k1 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
+            end
         end
-    end
 
-    m = m - q*coulomb*dt*(m_k1);
-    m = m./(sqrt(sum(m.^2,3))); % Renormalize
+        m_k2=zeros(N,N,3);
+        m_k2arg = m + dt/2*m_k1;
+        m_x=(m_k2arg(mod(1:N,N)+1,1:N,:)-m_k2arg(mod(-1:N-2,N)+1,1:N,:))/(2*dx);
+        m_y=(m_k2arg(1:N,mod(1:N,N)+1,:)-m_k2arg(1:N,mod(-1:N-2,N)+1,:))/(2*dy);
+        for i = 1:N
+            for j = 1:N
+                m_k2 = m_k2 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
+            end
+        end
+
+        m_k3=zeros(N,N,3);
+        m_k3arg = m + dt/2*m_k2;
+        m_x=(m_k3arg(mod(1:N,N)+1,1:N,:)-m_k3arg(mod(-1:N-2,N)+1,1:N,:))/(2*dx);
+        m_y=(m_k3arg(1:N,mod(1:N,N)+1,:)-m_k3arg(1:N,mod(-1:N-2,N)+1,:))/(2*dy);
+        for i = 1:N
+            for j = 1:N
+                m_k3 = m_k3 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
+            end
+        end
+
+        m_k4=zeros(N,N,3);
+        m_k4arg = m + dt*m_k3;
+        m_x=(m_k4arg(mod(1:N,N)+1,1:N,:)-m_k4arg(mod(-1:N-2,N)+1,1:N,:))/(2*dx);
+        m_y=(m_k4arg(1:N,mod(1:N,N)+1,:)-m_k4arg(1:N,mod(-1:N-2,N)+1,:))/(2*dy);
+        for i = 1:N
+            for j = 1:N
+                m_k4 = m_k4 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
+            end
+        end
+
+        m = m - q*coulomb*dt*(m_k1+2*m_k2+2*m_k3+m_k4);
+        m = m./(sqrt(sum(m.^2,3))); % Renormalize
+    end
 
 
     % check conserved quantities
@@ -147,9 +182,20 @@ while t<t_final
     % reset for new loop
     m_init=m;
     t=t+dt;
+    m_full(:,:,:,t_ind) = m;
+    rho_full(:,:,t_ind) = rho;
+    t_ind=t_ind+1;
 end
 
 %plot(1:length(E_B_list),E_B_list,1:length(E_LL_list),E_LL_list,1:length(E_El_list),E_El_list)
+
+for i = 1:t_ind
+    quiver(xx,yy,m_full(:,:,1,i),m_full(:,:,2,i))
+    hold on
+    contour(xx,yy,rho_full(:,:,i),10) % color plot
+    hold off
+    drawnow
+end
 
 
 

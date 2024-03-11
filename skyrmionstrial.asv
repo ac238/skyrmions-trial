@@ -1,7 +1,7 @@
 
 
 % create bounds of graph
-N=10;
+N=30;
 xlow=-50;
 ylow=-50;
 xhigh=50;
@@ -12,7 +12,7 @@ dx=(xhigh-xlow)/(N-1);
 dy=(yhigh-ylow)/(N-1);
 
 % initialize skyrmion according to QHMF 35
-n=-2;
+n=-1;
 z_0=0;
 lambda=20;
 
@@ -25,26 +25,29 @@ m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
 % initialize Coulomb distance matrix
 for i = 1:N
     for j = 1:N
-        dist_x(i,j,:,:) = (xx-xx(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
-        dist_x(i,j,i,j) = 0;
-        dist_y(i,j,:,:) = (yy-yy(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
-        dist_y(i,j,i,j) = 0;
+        for k = 1:3
+            dist_x(:,:,k,i,j) = (xx-xx(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
+            dist_x(i,j,k,i,j) = 0;
+            dist_y(:,:,k,i,j) = (yy-yy(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
+            dist_y(i,j,k,i,j) = 0;
+        end
     end
 end
 
 
 % dynamics
-landau = 0; % change to 0/1 to turn off/on effects
+landau = 1; % change to 0/1 to turn off/on effects
 zeeman = 0;
-coulomb = 1;
+coulomb = 0;
 electric = 0;
 
 t=0;
-t_final=1;
+t_final=10;
 dt=0.001;
-kappa = 10;     % change strengths of effects
+t_ind=1;
+kappa = 100;     % change strengths of effects
 gmuB = 10;
-q = 10;
+q = 100;
 El = 100;
 Q_top = -n;
 E_B_list = []; % store values for final plot
@@ -100,16 +103,47 @@ while t<t_final
     rho = 4*atan2(triple,denom)/(4*pi*dx*dy);
 
     % Coulomb term
-    Q=zeros(N,N);
+    if coulomb = 1
+    m_k1=zeros(N,N,3);
     m_x=(m(mod(1:N,N)+1,1:N,:)-m(mod(-1:N-2,N)+1,1:N,:))/(2*dx);
     m_y=(m(1:N,mod(1:N,N)+1,:)-m(1:N,mod(-1:N-2,N)+1,:))/(2*dy);
     for i = 1:N
         for j = 1:N
-            Q = Q + (dist_x(i,j,:,:).*m_y - dist_x(i,j,:,:).*m_x ).*rho(i,j)*dx*dy;
+            m_k1 = m_k1 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
         end
     end
 
-    m = m - q*coulomb*Q*dt;
+    m_k2=zeros(N,N,3);
+    m_k2arg = m + dt/2*m_k1;
+    m_x=(m_k2arg(mod(1:N,N)+1,1:N,:)-m_k2arg(mod(-1:N-2,N)+1,1:N,:))/(2*dx);
+    m_y=(m_k2arg(1:N,mod(1:N,N)+1,:)-m_k2arg(1:N,mod(-1:N-2,N)+1,:))/(2*dy);
+    for i = 1:N
+        for j = 1:N
+            m_k2 = m_k2 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
+        end
+    end
+
+    m_k3=zeros(N,N,3);
+    m_k3arg = m + dt/2*m_k2;
+    m_x=(m_k3arg(mod(1:N,N)+1,1:N,:)-m_k3arg(mod(-1:N-2,N)+1,1:N,:))/(2*dx);
+    m_y=(m_k3arg(1:N,mod(1:N,N)+1,:)-m_k3arg(1:N,mod(-1:N-2,N)+1,:))/(2*dy);
+    for i = 1:N
+        for j = 1:N
+            m_k3 = m_k3 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
+        end
+    end
+
+    m_k4=zeros(N,N,3);
+    m_k4arg = m + dt*m_k3;
+    m_x=(m_k4arg(mod(1:N,N)+1,1:N,:)-m_k4arg(mod(-1:N-2,N)+1,1:N,:))/(2*dx);
+    m_y=(m_k4arg(1:N,mod(1:N,N)+1,:)-m_k4arg(1:N,mod(-1:N-2,N)+1,:))/(2*dy);
+    for i = 1:N
+        for j = 1:N
+            m_k4 = m_k4 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
+        end
+    end
+
+    m = m - q*coulomb*dt*(m_k1+2*m_k2+2*m_k3+m_k4);
     m = m./(sqrt(sum(m.^2,3))); % Renormalize
 
 
@@ -145,9 +179,15 @@ while t<t_final
     % reset for new loop
     m_init=m;
     t=t+dt;
+    m_full(:,:,:,t_ind) = m;
+    t_ind=t_ind+1;
 end
 
 %plot(1:length(E_B_list),E_B_list,1:length(E_LL_list),E_LL_list,1:length(E_El_list),E_El_list)
+
+for i = 1:t_ind
+    quiver(xx,yy,m_full(:,:,1,i),m_full(:,:,2,i))
+end
 
 
 
