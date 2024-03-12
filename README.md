@@ -37,8 +37,8 @@ The numerical Pontryagin density is equal to the solid angle between m and its n
 The solid-angle formula is complicated, so I calculated it in pieces. For any parts that used the magnitude, I simply substituted 1.
 
 % Coulomb term
-I added the Coulomb term with RK1.
-The unchanging parts of the calculation within the for loop were condensed into two larger matrices, dist_x and dist_y, for efficiency.
+I added the Coulomb term with RK4.
+The unchanging parts of the calculation within the for loop were condensed into two larger non-dynamic matrices, dist_x and dist_y, for efficiency.
 
 % Topological charge
 I numerically integrated rho over all space to find Q_top, the topological charge.
@@ -54,8 +54,13 @@ A line of code is present which can be uncommented to replace the graphs with a 
 Calculates conserved quantities such as S_z and various types of energy.
 Only the Zeeman, A, and stiffness terms have been implemented; Coulomb and electric field are coming soon.
 Plots them over time after all time is elapsed.
-E_El doesn't seem to be conserved.
+E_El doesn't seem to be conserved, but when it oscillates, it does seem to depend on the skyrmion's position, much like a charge in a potential.
+Q_top is not conserved by the electric or Coulomb terms.
+E_C still needs to be implemented.
 
+% draw saved data
+Records each time-frame of m and rho in a large matrix so that the dynamics can be replayed in constant time.
+Copy-paste this into console to replay it without generating the data again.
 
 
 

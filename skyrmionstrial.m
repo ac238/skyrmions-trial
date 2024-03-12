@@ -47,11 +47,12 @@ dt=0.001;
 t_ind=1;
 kappa = 100;     % change strengths of effects
 gmuB = 10;
-q = 100;
+q = 1000;
 El_amp = 100;
-El_freq = 10;
+El_freq = 1;
 Q_top = -n;
-E_B_list = []; % store values for final plot
+Q_top_list = []; % store values for final plot
+E_B_list = [];
 E_LL_list = [];
 E_C_list = [];
 E_El_list = [];
@@ -109,7 +110,7 @@ while t<t_final
         m_k1=zeros(N,N,3);
         m_x=(m(mod(1:N,N)+1,1:N,:)-m(mod(-1:N-2,N)+1,1:N,:))/(2*dx);
         m_y=(m(1:N,mod(1:N,N)+1,:)-m(1:N,mod(-1:N-2,N)+1,:))/(2*dy);
-        for i = 1:N
+        parfor i = 1:N
             for j = 1:N
                 m_k1 = m_k1 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
             end
@@ -119,7 +120,7 @@ while t<t_final
         m_k2arg = m + dt/2*m_k1;
         m_x=(m_k2arg(mod(1:N,N)+1,1:N,:)-m_k2arg(mod(-1:N-2,N)+1,1:N,:))/(2*dx);
         m_y=(m_k2arg(1:N,mod(1:N,N)+1,:)-m_k2arg(1:N,mod(-1:N-2,N)+1,:))/(2*dy);
-        for i = 1:N
+        parfor i = 1:N
             for j = 1:N
                 m_k2 = m_k2 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
             end
@@ -129,7 +130,7 @@ while t<t_final
         m_k3arg = m + dt/2*m_k2;
         m_x=(m_k3arg(mod(1:N,N)+1,1:N,:)-m_k3arg(mod(-1:N-2,N)+1,1:N,:))/(2*dx);
         m_y=(m_k3arg(1:N,mod(1:N,N)+1,:)-m_k3arg(1:N,mod(-1:N-2,N)+1,:))/(2*dy);
-        for i = 1:N
+        parfor i = 1:N
             for j = 1:N
                 m_k3 = m_k3 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
             end
@@ -139,13 +140,13 @@ while t<t_final
         m_k4arg = m + dt*m_k3;
         m_x=(m_k4arg(mod(1:N,N)+1,1:N,:)-m_k4arg(mod(-1:N-2,N)+1,1:N,:))/(2*dx);
         m_y=(m_k4arg(1:N,mod(1:N,N)+1,:)-m_k4arg(1:N,mod(-1:N-2,N)+1,:))/(2*dy);
-        for i = 1:N
+        parfor i = 1:N
             for j = 1:N
                 m_k4 = m_k4 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
             end
         end
 
-        m = m - q*coulomb*dt*(m_k1+2*m_k2+2*m_k3+m_k4);
+        m = m + q*coulomb*dt*(m_k1+2*m_k2+2*m_k3+m_k4);
         m = m./(sqrt(sum(m.^2,3))); % Renormalize
     end
 
@@ -162,6 +163,7 @@ while t<t_final
     E_LL = sum(sum(-kappa/2 * (sum(m_dx.^2+m_dy.^2))));   % stiffness energy
     E_C = 0;   % Coulomb energy (need to do)
     E_El = El*sum(sum(xx.*rho));   % Applied electric field energy
+    Q_top_list(length(Q_top_list)+1)=Q_top;
     E_B_list(length(E_B_list)+1)=E_B;
     E_LL_list(length(E_LL_list)+1)=E_LL;
     E_C_list(length(E_C_list)+1)=E_C;
@@ -174,7 +176,7 @@ while t<t_final
     quiver(xx,yy,m(:,:,1),m(:,:,2)) % full 2D vector field
     %quiver(xx(:,N/2),zeros(1,N),m(N/2,:,1),m(N/2,:,3)) % 1D slice
     hold on
-    contour(xx,yy,rho,10) % color plot
+    contour(xx(1:N-1,1:N-1)+dx/2,yy(1:N-1,1:N-1)+dy/2,rho(1:N-1,1:N-1),10) % color plot
     hold off
     axis([xlow xhigh ylow yhigh])
     drawnow
@@ -187,8 +189,10 @@ while t<t_final
     t_ind=t_ind+1;
 end
 
-%plot(1:length(E_B_list),E_B_list,1:length(E_LL_list),E_LL_list,1:length(E_El_list),E_El_list)
+% to plot one of the energies:
+% plot(1:length(E_B_list),E_B_list)
 
+% draw saved data with no lag, can copypaste to console to do again
 for i = 1:t_ind
     quiver(xx,yy,m_full(:,:,1,i),m_full(:,:,2,i))
     hold on
@@ -196,6 +200,5 @@ for i = 1:t_ind
     hold off
     drawnow
 end
-
 
 
