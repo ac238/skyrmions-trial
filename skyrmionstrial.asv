@@ -38,8 +38,8 @@ end
 % dynamics
 landau = 1; % change to 0/1 to turn off/on effects
 zeeman = 0;
-coulomb = 0;
-electric = 1;
+coulomb = 1;
+electric = 0;
 
 t=0;
 t_final=1;
@@ -147,7 +147,8 @@ while t<t_final
             end
         end
 
-        m = m + q*coulomb*dt*(m_k1+2*m_k2+2*m_k3+m_k4);
+        m_RK4 = (m_k1+2*m_k2+2*m_k3+m_k4)/6
+        m = m + q*coulomb*dt*(m_RK4);
         m = m./(sqrt(sum(m.^2,3))); % Renormalize
     end
 
@@ -157,9 +158,10 @@ while t<t_final
     Q_top=sum(sum(rho))*dx*dy  % topological charge
     S_z=sum(sum(m(:,:,3)));           % total spin in z-direction
 
-    cent_of_mass_x = sum(sum(rho.*xx))/Q_top;
-    cent_of_mass_y = sum(sum(rho.*yy))/Q_top
-    variance_x = 
+    cent_of_mass_x = sum(sum(rho.*xx))/Q_top*dx*dy;
+    cent_of_mass_y = sum(sum(rho.*yy))/Q_top*dx*dy;
+    variance = sum(sum(rho.*((xx-cent_of_mass_x).^2+(yy-cent_of_mass_y).^2)))/Q_top*dx*dy;
+    st_dev = sqrt(variance);
 
     m_dx=(m(mod(1:N,N)+1,:,:)-m(mod(-1:N-2,N)+1,:,:))/(2*dx); 
     m_dy=(m(:,mod(1:N,N)+1,:)-m(:,mod(-1:N-2,N)+1,:))/(2*dy);
@@ -181,7 +183,8 @@ while t<t_final
     quiver(xx,yy,m(:,:,1),m(:,:,2)) % full 2D vector field
     %quiver(xx(:,N/2),zeros(1,N),m(N/2,:,1),m(N/2,:,3)) % 1D slice
     hold on
-    contour(xx,yy,rho_avg,10) % color plot
+    quiver(cent_of_mass_x,cent_of_mass_y,st_dev,0,'r')
+    contour(xx-dx/2,yy-dy/2,rho_avg,10) % color plot
     hold off
     axis([xlow xhigh ylow yhigh])
     drawnow

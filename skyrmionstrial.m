@@ -38,8 +38,8 @@ end
 % dynamics
 landau = 1; % change to 0/1 to turn off/on effects
 zeeman = 0;
-coulomb = 0;
-electric = 1;
+coulomb = 1;
+electric = 0;
 
 t=0;
 t_final=1;
@@ -47,7 +47,7 @@ dt=0.001;
 t_ind=1;
 kappa = 100;     % change strengths of effects
 gmuB = 10;
-q = -1000;
+q = -10000;
 El_amp = 100;
 El_freq = 10;
 Q_top = -n;
@@ -113,7 +113,7 @@ while t<t_final
         m_y=(m(1:N,mod(1:N,N)+1,:)-m)/(dy);
         parfor i = 1:N
             for j = 1:N
-                m_k1 = m_k1 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho_avg(i,j)*dx*dy;
+                m_k1 = m_k1 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
             end
         end
 
@@ -123,7 +123,7 @@ while t<t_final
         m_y=(m_k2arg(1:N,mod(1:N,N)+1,:)-m_k2arg)/(dy);
         parfor i = 1:N
             for j = 1:N
-                m_k2 = m_k2 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho_avg(i,j)*dx*dy;
+                m_k2 = m_k2 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
             end
         end
 
@@ -133,7 +133,7 @@ while t<t_final
         m_y=(m_k3arg(1:N,mod(1:N,N)+1,:)-m_k3arg)/(dy);
         parfor i = 1:N
             for j = 1:N
-                m_k3 = m_k3 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho_avg(i,j)*dx*dy;
+                m_k3 = m_k3 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
             end
         end
 
@@ -143,11 +143,12 @@ while t<t_final
         m_y=(m_k4arg(1:N,mod(1:N,N)+1,:)-m_k4arg)/(dy);
         parfor i = 1:N
             for j = 1:N
-                m_k4 = m_k4 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho_avg(i,j)*dx*dy;
+                m_k4 = m_k4 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
             end
         end
 
-        m = m + q*coulomb*dt*(m_k1+2*m_k2+2*m_k3+m_k4);
+        m_RK4 = (m_k1+2*m_k2+2*m_k3+m_k4)/6;
+        m = m + q*coulomb*dt*(m_RK4+m_RK4(mod(-1:N-2,N)+1,:,:)+m_RK4(:,mod(-1:N-2,N)+1,:)+m_RK4(mod(-1:N-2,N)+1,mod(-1:N-2,N)+1,:))/4;
         m = m./(sqrt(sum(m.^2,3))); % Renormalize
     end
 
@@ -158,9 +159,9 @@ while t<t_final
     S_z=sum(sum(m(:,:,3)));           % total spin in z-direction
 
     cent_of_mass_x = sum(sum(rho.*xx))/Q_top*dx*dy;
-    cent_of_mass_y = sum(sum(rho.*yy))/Q_top*dx*dy
+    cent_of_mass_y = sum(sum(rho.*yy))/Q_top*dx*dy;
     variance = sum(sum(rho.*((xx-cent_of_mass_x).^2+(yy-cent_of_mass_y).^2)))/Q_top*dx*dy;
-    st_dev = sqrt(variance)
+    st_dev = sqrt(variance);
 
     m_dx=(m(mod(1:N,N)+1,:,:)-m(mod(-1:N-2,N)+1,:,:))/(2*dx); 
     m_dy=(m(:,mod(1:N,N)+1,:)-m(:,mod(-1:N-2,N)+1,:))/(2*dy);
