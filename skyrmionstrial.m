@@ -1,15 +1,15 @@
 
 
 % create bounds of graph
-N=30;
-xlow=-50;
-ylow=-50;
-xhigh=50;
-yhigh=50;
+N=70;
+dx=1;
+dy=1;
+xlow=-(N+1)/2;
+ylow=-(N+1)/2;
+xhigh=(N-1)/2;
+yhigh=(N-1)/2;
 [yy,xx]=meshgrid(linspace(xlow,xhigh,N),linspace(ylow,yhigh,N)); %xx and yy are swapped to correspond w/ indices
 axis([xlow xhigh ylow yhigh])
-dx=(xhigh-xlow)/(N-1);
-dy=(yhigh-ylow)/(N-1);
 
 % initialize skyrmion according to QHMF 35
 n=-2;
@@ -35,9 +35,26 @@ for i = 1:N
 end
 
 
+% constants
+B_field=1.1;
+E_field=1.1;
+q_electron=-10.1;
+mass_electron=1.1;
+rho_stiff=1.1;
+dielectric=1.1;
+g_factor=2.002319;
+casimir=0.5;
+nu_level=1.0;
+
+kappa = -rho_stiff*q_electron/(casimir*nu_level*B_field);
+gmuB = g_factor*B_field*q_electron/(2*mass_electron);
+q = q_electron^3/(4*pi*casimir*nu_level*B_field*dielectric);
+El_amp = -q_electron^2*E_field/(4*pi*casimir*nu_level*B_field);
+
+
 % dynamics
 landau = 1; % change to 0/1 to turn off/on effects
-zeeman = 0;
+zeeman = 1;
 coulomb = 1;
 electric = 0;
 
@@ -45,10 +62,6 @@ t=0;
 t_final=1;
 dt=0.001;
 t_ind=1;
-kappa = 100;     % change strengths of effects
-gmuB = 10;
-q = -10000;
-El_amp = 100;
 El_freq = 10;
 Q_top = -n;
 Q_top_list = []; % store values for final plot
@@ -74,27 +87,24 @@ while t<t_final
     m(:,:,2) = m(:,:,2) + zeeman*dt/6*(m2_k1 + 2*m2_k2 + 2*m2_k3 + m2_k4);
 
     % Electric field term with RK4
-    m_k1 = (m(:,mod(-1:N-2,N)+1,:)-m(:,mod(1:N,N)+1,:))/(2*dy);
-    m_k2 = (m(:,mod(-1:N-2,N)+1,:)-m(:,mod(1:N,N)+1,:) + dt/2*(m_k1(:,mod(-1:N-2,N)+1,:)-m_k1(:,mod(1:N,N)+1,:)))/(2*dy);
-    m_k3 = (m(:,mod(-1:N-2,N)+1,:)-m(:,mod(1:N,N)+1,:) + dt/2*(m_k2(:,mod(-1:N-2,N)+1,:)-m_k2(:,mod(1:N,N)+1,:)))/(2*dy);
-    m_k4 = (m(:,mod(-1:N-2,N)+1,:)-m(:,mod(1:N,N)+1,:) + dt*(m_k3(:,mod(-1:N-2,N)+1,:)-m_k3(:,mod(1:N,N)+1,:)))/(2*dy);
+    m_k1 = (deriv_center_y(m))/(2*dy);
+    m_k2 = (deriv_center_y(m) + dt/2*(deriv_center_y(m_k1)))/(2*dy);
+    m_k3 = (deriv_center_y(m) + dt/2*(deriv_center_y(m_k2)))/(2*dy);
+    m_k4 = (deriv_center_y(m) + dt*(deriv_center_y(m_k3)))/(2*dy);
 
     El = El_amp*cos(El_freq*t);
     m = m + electric*El*dt/6*(m_k1 + 2*m_k2 + 2*m_k3 + m_k4);
     m = m./(sqrt(sum(m.^2,3))); % Renormalize
 
     % L-L term with RK4 (only works for dx=dy) (doesn't conserve norm=1)
-    m_k1 = kappa/(dx^2) * (m(1:N,1:N,mod(1:3,3)+1).*(m(mod(-1:N-2,N)+1,1:N,mod(2:4,3)+1)+m(mod(1:N,N)+1,1:N,mod(2:4,3)+1)+m(1:N,mod(-1:N-2,N)+1,mod(2:4,3)+1)+m(1:N,mod(1:N,N)+1,mod(2:4,3)+1)-4*m(1:N,1:N,mod(2:4,3)+1)) - m(1:N,1:N,mod(2:4,3)+1).*(m(mod(-1:N-2,N)+1,1:N,mod(1:3,3)+1)+m(mod(1:N,N)+1,1:N,mod(1:3,3)+1)+m(1:N,mod(-1:N-2,N)+1,mod(1:3,3)+1)+m(1:N,mod(1:N,N)+1,mod(1:3,3)+1)-4*m(1:N,1:N,mod(1:3,3)+1)));
-    
+    m_k1 = kappa/(dx^2) * (stiffness(m));
     m_k2arg = m+dt/2*m_k1;
-    m_k2 = kappa/(dx^2) * (m_k2arg(1:N,1:N,mod(1:3,3)+1).*(m_k2arg(mod(-1:N-2,N)+1,1:N,mod(2:4,3)+1)+m_k2arg(mod(1:N,N)+1,1:N,mod(2:4,3)+1)+m_k2arg(1:N,mod(-1:N-2,N)+1,mod(2:4,3)+1)+m_k2arg(1:N,mod(1:N,N)+1,mod(2:4,3)+1)-4*m_k2arg(1:N,1:N,mod(2:4,3)+1)) - m_k2arg(1:N,1:N,mod(2:4,3)+1).*(m_k2arg(mod(-1:N-2,N)+1,1:N,mod(1:3,3)+1)+m_k2arg(mod(1:N,N)+1,1:N,mod(1:3,3)+1)+m_k2arg(1:N,mod(-1:N-2,N)+1,mod(1:3,3)+1)+m_k2arg(1:N,mod(1:N,N)+1,mod(1:3,3)+1)-4*m_k2arg(1:N,1:N,mod(1:3,3)+1)));
-    
+    m_k2 = kappa/(dx^2) * (stiffness(m_k2arg));
     m_k3arg = m+dt/2*m_k2;
-    m_k3 = kappa/(dx^2) * (m_k3arg(1:N,1:N,mod(1:3,3)+1).*(m_k3arg(mod(-1:N-2,N)+1,1:N,mod(2:4,3)+1)+m_k3arg(mod(1:N,N)+1,1:N,mod(2:4,3)+1)+m_k3arg(1:N,mod(-1:N-2,N)+1,mod(2:4,3)+1)+m_k3arg(1:N,mod(1:N,N)+1,mod(2:4,3)+1)-4*m_k3arg(1:N,1:N,mod(2:4,3)+1)) - m_k3arg(1:N,1:N,mod(2:4,3)+1).*(m_k3arg(mod(-1:N-2,N)+1,1:N,mod(1:3,3)+1)+m_k3arg(mod(1:N,N)+1,1:N,mod(1:3,3)+1)+m_k3arg(1:N,mod(-1:N-2,N)+1,mod(1:3,3)+1)+m_k3arg(1:N,mod(1:N,N)+1,mod(1:3,3)+1)-4*m_k3arg(1:N,1:N,mod(1:3,3)+1)));
-    
+    m_k3 = kappa/(dx^2) * (stiffness(m_k3arg));
     m_k4arg = m+dt*m_k3;
-    m_k4 = kappa/(dx^2) * (m_k4arg(1:N,1:N,mod(1:3,3)+1).*(m_k4arg(mod(-1:N-2,N)+1,1:N,mod(2:4,3)+1)+m_k4arg(mod(1:N,N)+1,1:N,mod(2:4,3)+1)+m_k4arg(1:N,mod(-1:N-2,N)+1,mod(2:4,3)+1)+m_k4arg(1:N,mod(1:N,N)+1,mod(2:4,3)+1)-4*m_k4arg(1:N,1:N,mod(2:4,3)+1)) - m_k4arg(1:N,1:N,mod(2:4,3)+1).*(m_k4arg(mod(-1:N-2,N)+1,1:N,mod(1:3,3)+1)+m_k4arg(mod(1:N,N)+1,1:N,mod(1:3,3)+1)+m_k4arg(1:N,mod(-1:N-2,N)+1,mod(1:3,3)+1)+m_k4arg(1:N,mod(1:N,N)+1,mod(1:3,3)+1)-4*m_k4arg(1:N,1:N,mod(1:3,3)+1)));
-    
+    m_k4 = kappa/(dx^2) * (stiffness(m_k4arg));
+
     m = m + landau*dt/6*(m_k1+2*m_k2+2*m_k3+m_k4);
     m = m./(sqrt(sum(m.^2,3))); % Renormalize
 
@@ -181,9 +191,9 @@ while t<t_final
     
     % plot
     quiver(xx,yy,m(:,:,1),m(:,:,2)) % full 2D vector field
-    %quiver(xx(:,N/2),zeros(1,N),m(N/2,:,1),m(N/2,:,3)) % 1D slice
+    %quiver(xx(:,N/2),zeros(1,N),m(N/2,:,1),m(N/2,:,3))  % 1D slice
     hold on
-    quiver(cent_of_mass_x,cent_of_mass_y,st_dev,0,'r')
+    %quiver(cent_of_mass_x,cent_of_mass_y,st_dev,0,'r')  %radius vector
     contour(xx-dx/2,yy-dy/2,rho_avg,10) % color plot
     hold off
     axis([xlow xhigh ylow yhigh])
