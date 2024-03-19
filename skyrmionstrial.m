@@ -38,18 +38,18 @@ end
 % constants
 B_field=1.1;
 E_field=1.1;
-q_electron=-10.1;
+q_electron=-3.1;
 mass_electron=1.1;
 rho_stiff=1.1;
 dielectric=1.1;
-g_factor=2.002319;
+g_factor=2.002;
 casimir=0.5;
 nu_level=1.0;
 
-kappa = -rho_stiff*q_electron/(casimir*nu_level*B_field);
+kappa = -rho_stiff*q_electron/(2*pi*casimir*nu_level*B_field);
 gmuB = g_factor*B_field*q_electron/(2*mass_electron);
-q = q_electron^3/(4*pi*casimir*nu_level*B_field*dielectric);
-El_amp = -q_electron^2*E_field/(4*pi*casimir*nu_level*B_field);
+q = q_electron^3/(8*pi^2*casimir*nu_level*B_field*dielectric);
+El_amp = -q_electron^2*E_field/(8*pi^2*casimir*nu_level*B_field);
 
 
 % dynamics
@@ -59,7 +59,7 @@ coulomb = 1;
 electric = 0;
 
 t=0;
-t_final=1;
+t_final=10;
 dt=0.001;
 t_ind=1;
 El_freq = 10;
@@ -165,7 +165,7 @@ while t<t_final
 
     % check conserved quantities
     Q_top_init = Q_top;
-    Q_top=sum(sum(rho))*dx*dy  % topological charge
+    Q_top=sum(sum(rho))*dx*dy;  % topological charge
     S_z=sum(sum(m(:,:,3)));           % total spin in z-direction
 
     cent_of_mass_x = sum(sum(rho.*xx))/Q_top*dx*dy;
