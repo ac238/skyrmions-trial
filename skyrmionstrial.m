@@ -12,9 +12,9 @@ yhigh=(N-1)/2;
 axis([xlow xhigh ylow yhigh])
 
 % initialize skyrmion according to QHMF 35
-n=-2;
+n=1;
 z_0=0;
-lambda=20;
+lambda=5;
 
 omega = ((xx + yy*1i - z_0)/lambda).^n;
 m_init(:,:,1)=4*real(omega)./((abs(omega)).^2+4);
@@ -23,21 +23,23 @@ m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
 
 
 % initialize Coulomb distance matrix
-for i = 1:N
-    for j = 1:N
-        for k = 1:3
-            dist_x(:,:,k,i,j) = (xx-xx(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
-            dist_x(i,j,k,i,j) = 0;
-            dist_y(:,:,k,i,j) = (yy-yy(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
-            dist_y(i,j,k,i,j) = 0;
-        end
-    end
-end
+%for i = 1:N
+%    for j = 1:N
+%        for k = 1:3
+%            dist_x(:,:,k,i,j) = (xx-xx(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
+%            dist_x(i,j,k,i,j) = 0;
+%            dist_y(:,:,k,i,j) = (yy-yy(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
+%            dist_y(i,j,k,i,j) = 0;
+%        end
+%        energy_dist(:,:,i,j) = ((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^-0.5;
+%        energy_dist(i,j,i,j) = 0;
+%    end
+%end
 
 
-% constants
+% physical constants
 B_field=1.1;
-E_field=1.1;
+E_field=10.1;
 q_electron=-3.1;
 mass_electron=1.1;
 rho_stiff=1.1;
@@ -46,10 +48,16 @@ g_factor=2.002;
 casimir=0.5;
 nu_level=1.0;
 
-kappa = -rho_stiff*q_electron/(2*pi*casimir*nu_level*B_field);
-gmuB = g_factor*B_field*q_electron/(2*mass_electron);
-q = q_electron^3/(8*pi^2*casimir*nu_level*B_field*dielectric);
-El_amp = -q_electron^2*E_field/(8*pi^2*casimir*nu_level*B_field);
+stiff_val = -rho_stiff*q_electron/(2*pi*casimir*nu_level*B_field);
+b_val = g_factor*B_field*q_electron/(2*mass_electron);
+alpha_val = q_electron^3/(8*pi^2*casimir*nu_level*B_field*dielectric);
+e_val = -q_electron^2*E_field/(8*pi^2*casimir*nu_level*B_field);
+
+%custom parameters
+b_val = 0.13;
+stiff_val = 1;
+e_val = 0;
+alpha_val = 7.1 ;
 
 
 % dynamics
@@ -59,10 +67,10 @@ coulomb = 1;
 electric = 0;
 
 t=0;
-t_final=10;
-dt=0.001;
+t_final=100;
+dt=0.01;
 t_ind=1;
-El_freq = 10;
+El_freq = 1.1;
 Q_top = -n;
 Q_top_list = []; % store values for final plot
 E_B_list = [];
@@ -74,14 +82,14 @@ while t<t_final
     m = m_init;
 
     % Zeeman term with RK4
-    m1_k1 = gmuB*m(:,:,2);
-    m2_k1 = -gmuB*m(:,:,1);
-    m1_k2 = gmuB*(m(:,:,2)+dt/2*m2_k1);
-    m2_k2 = -gmuB*(m(:,:,1)+dt/2*m1_k1);
-    m1_k3 = gmuB*(m(:,:,2)+dt/2*m2_k2);
-    m2_k3 = -gmuB*(m(:,:,1)+dt/2*m1_k2);
-    m1_k4 = gmuB*(m(:,:,2)+dt*m2_k3);
-    m2_k4 = -gmuB*(m(:,:,1)+dt*m1_k3);
+    m1_k1 = b_val*m(:,:,2);
+    m2_k1 = -b_val*m(:,:,1);
+    m1_k2 = b_val*(m(:,:,2)+dt/2*m2_k1);
+    m2_k2 = -b_val*(m(:,:,1)+dt/2*m1_k1);
+    m1_k3 = b_val*(m(:,:,2)+dt/2*m2_k2);
+    m2_k3 = -b_val*(m(:,:,1)+dt/2*m1_k2);
+    m1_k4 = b_val*(m(:,:,2)+dt*m2_k3);
+    m2_k4 = -b_val*(m(:,:,1)+dt*m1_k3);
 
     m(:,:,1) = m(:,:,1) + zeeman*dt/6*(m1_k1 + 2*m1_k2 + 2*m1_k3 + m1_k4);
     m(:,:,2) = m(:,:,2) + zeeman*dt/6*(m2_k1 + 2*m2_k2 + 2*m2_k3 + m2_k4);
@@ -92,18 +100,18 @@ while t<t_final
     m_k3 = (deriv_center_y(m) + dt/2*(deriv_center_y(m_k2)))/(2*dy);
     m_k4 = (deriv_center_y(m) + dt*(deriv_center_y(m_k3)))/(2*dy);
 
-    El = El_amp*cos(El_freq*t);
+    El = e_val*cos(El_freq*t);
     m = m + electric*El*dt/6*(m_k1 + 2*m_k2 + 2*m_k3 + m_k4);
     m = m./(sqrt(sum(m.^2,3))); % Renormalize
 
     % L-L term with RK4 (only works for dx=dy) (doesn't conserve norm=1)
-    m_k1 = kappa/(dx^2) * (stiffness(m));
+    m_k1 = stiff_val/(dx^2) * (stiffness(m));
     m_k2arg = m+dt/2*m_k1;
-    m_k2 = kappa/(dx^2) * (stiffness(m_k2arg));
+    m_k2 = stiff_val/(dx^2) * (stiffness(m_k2arg));
     m_k3arg = m+dt/2*m_k2;
-    m_k3 = kappa/(dx^2) * (stiffness(m_k3arg));
+    m_k3 = stiff_val/(dx^2) * (stiffness(m_k3arg));
     m_k4arg = m+dt*m_k3;
-    m_k4 = kappa/(dx^2) * (stiffness(m_k4arg));
+    m_k4 = stiff_val/(dx^2) * (stiffness(m_k4arg));
 
     m = m + landau*dt/6*(m_k1+2*m_k2+2*m_k3+m_k4);
     m = m./(sqrt(sum(m.^2,3))); % Renormalize
@@ -118,49 +126,29 @@ while t<t_final
 
     % Coulomb term
     if coulomb == 1
-        m_k1=zeros(N,N,3);
-        m_x=(m(mod(1:N,N)+1,1:N,:)-m)/(dx);
-        m_y=(m(1:N,mod(1:N,N)+1,:)-m)/(dy);
-        parfor i = 1:N
-            for j = 1:N
-                m_k1 = m_k1 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
-            end
-        end
-
-        m_k2=zeros(N,N,3);
+        m_k1=coulomb_loop(m,dist_x,dist_y,rho);
         m_k2arg = m + dt/2*m_k1;
-        m_x=(m_k2arg(mod(1:N,N)+1,1:N,:)-m_k2arg)/(dx);
-        m_y=(m_k2arg(1:N,mod(1:N,N)+1,:)-m_k2arg)/(dy);
-        parfor i = 1:N
-            for j = 1:N
-                m_k2 = m_k2 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
-            end
-        end
-
-        m_k3=zeros(N,N,3);
+        m_k2=coulomb_loop(m_k2arg,dist_x,dist_y,rho);
         m_k3arg = m + dt/2*m_k2;
-        m_x=(m_k3arg(mod(1:N,N)+1,1:N,:)-m_k3arg)/(dx);
-        m_y=(m_k3arg(1:N,mod(1:N,N)+1,:)-m_k3arg)/(dy);
-        parfor i = 1:N
-            for j = 1:N
-                m_k3 = m_k3 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
-            end
-        end
-
-        m_k4=zeros(N,N,3);
+        m_k3=coulomb_loop(m_k3arg,dist_x,dist_y,rho);
         m_k4arg = m + dt*m_k3;
-        m_x=(m_k4arg(mod(1:N,N)+1,1:N,:)-m_k4arg)/(dx);
-        m_y=(m_k4arg(1:N,mod(1:N,N)+1,:)-m_k4arg)/(dy);
-        parfor i = 1:N
-            for j = 1:N
-                m_k4 = m_k4 + (dist_x(:,:,:,i,j).*m_y - dist_y(:,:,:,i,j).*m_x )*rho(i,j)*dx*dy;
-            end
-        end
+        m_k4=coulomb_loop(m_k4arg,dist_x,dist_y,rho);
 
         m_RK4 = (m_k1+2*m_k2+2*m_k3+m_k4)/6;
-        m = m + q*coulomb*dt*(m_RK4+m_RK4(mod(-1:N-2,N)+1,:,:)+m_RK4(:,mod(-1:N-2,N)+1,:)+m_RK4(mod(-1:N-2,N)+1,mod(-1:N-2,N)+1,:))/4;
+        m = m + alpha_val*coulomb*dt*(m_RK4+m_RK4(mod(-1:N-2,N)+1,:,:)+m_RK4(:,mod(-1:N-2,N)+1,:)+m_RK4(mod(-1:N-2,N)+1,mod(-1:N-2,N)+1,:))/4;
         m = m./(sqrt(sum(m.^2,3))); % Renormalize
     end
+
+
+    % Coulomb energy
+    coulomb_energy_field = zeros(N,N);
+    parfor i = 1:N
+        for j = 1:N
+            coulomb_energy_field = coulomb_energy_field + rho.*rho(i,j).*energy_dist(:,:,i,j);
+        end
+    end
+    E_C = alpha_val*2*pi*sum(sum(coulomb_energy_field));
+
 
 
     % check conserved quantities
@@ -176,10 +164,9 @@ while t<t_final
     m_dx=(m(mod(1:N,N)+1,:,:)-m(mod(-1:N-2,N)+1,:,:))/(2*dx); 
     m_dy=(m(:,mod(1:N,N)+1,:)-m(:,mod(-1:N-2,N)+1,:))/(2*dy);
 
-    E_B = gmuB*S_z;    % B energy
-    E_LL = sum(sum(-kappa/2 * (sum(m_dx.^2+m_dy.^2))));   % stiffness energy
-    E_C = 0;   % Coulomb energy (need to do)
-    E_El = El*sum(sum(xx.*rho));   % Applied electric field energy
+    E_B = b_val*S_z;    % B energy
+    E_LL = sum(sum(-stiff_val/2 * (sum(m_dx.^2+m_dy.^2))));   % stiffness energy
+    E_El = e_val*sum(sum(xx.*rho));   % Applied electric field energy
     Q_top_list(length(Q_top_list)+1)=Q_top;
     E_B_list(length(E_B_list)+1)=E_B;
     E_LL_list(length(E_LL_list)+1)=E_LL;
@@ -207,8 +194,12 @@ while t<t_final
     t_ind=t_ind+1;
 end
 
+E_total_list = E_B_list+E_LL_list+E_C_list+E_El_list;
+
 % to plot one of the energies:
 % plot(1:length(Q_top_list),Q_top_list)
+% plot(1:length(E_total_list),E_total_list)
+% plot(1:length(E_B_list),E_B_list,1:length(E_LL_list),E_LL_list,1:length(E_C_list),E_C_list,1:length(E_El_list),E_El_list)
 
 % draw saved data with no lag, can copypaste to console to do again
 for i = 1:t_ind
@@ -218,5 +209,7 @@ for i = 1:t_ind
     hold off
     drawnow
 end
+
+
 
 
