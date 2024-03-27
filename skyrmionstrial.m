@@ -23,18 +23,18 @@ m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
 
 
 % initialize Coulomb distance matrix
-%for i = 1:N
-%    for j = 1:N
-%        for k = 1:3
-%            dist_x(:,:,k,i,j) = (xx-xx(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
-%            dist_x(i,j,k,i,j) = 0;
-%            dist_y(:,:,k,i,j) = (yy-yy(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
-%            dist_y(i,j,k,i,j) = 0;
-%        end
-%        energy_dist(:,:,i,j) = ((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^-0.5;
-%        energy_dist(i,j,i,j) = 0;
-%    end
-%end
+for i = 1:N
+    for j = 1:N
+        for k = 1:3
+            dist_x(:,:,k,i,j) = (xx-xx(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
+            dist_x(i,j,k,i,j) = 0;
+            dist_y(:,:,k,i,j) = (yy-yy(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
+            dist_y(i,j,k,i,j) = 0;
+        end
+        energy_dist(:,:,i,j) = ((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^-0.5;
+        energy_dist(i,j,i,j) = 0;
+    end
+end
 
 
 % physical constants
@@ -57,12 +57,12 @@ e_val = -q_electron^2*E_field/(8*pi^2*casimir*nu_level*B_field);
 b_val = 0.13;
 stiff_val = 1;
 e_val = 0;
-alpha_val = 7.1 ;
+alpha_val = 0.7 ;
 
 
 % dynamics
 landau = 1; % change to 0/1 to turn off/on effects
-zeeman = 1;
+zeeman = 0;
 coulomb = 1;
 electric = 0;
 
@@ -76,7 +76,8 @@ Q_top_list = []; % store values for final plot
 E_B_list = [];
 E_LL_list = [];
 E_C_list = [];
-E_El_list = [];
+Spin_list = [];
+
 while t<t_final
 
     m = m_init;
@@ -135,7 +136,7 @@ while t<t_final
         m_k4=coulomb_loop(m_k4arg,dist_x,dist_y,rho);
 
         m_RK4 = (m_k1+2*m_k2+2*m_k3+m_k4)/6;
-        m = m + alpha_val*coulomb*dt*(m_RK4+m_RK4(mod(-1:N-2,N)+1,:,:)+m_RK4(:,mod(-1:N-2,N)+1,:)+m_RK4(mod(-1:N-2,N)+1,mod(-1:N-2,N)+1,:))/4;
+        m = m - alpha_val*coulomb*dt*(m_RK4+m_RK4(mod(-1:N-2,N)+1,:,:)+m_RK4(:,mod(-1:N-2,N)+1,:)+m_RK4(mod(-1:N-2,N)+1,mod(-1:N-2,N)+1,:))/4;
         m = m./(sqrt(sum(m.^2,3))); % Renormalize
     end
 
@@ -147,7 +148,7 @@ while t<t_final
             coulomb_energy_field = coulomb_energy_field + rho.*rho(i,j).*energy_dist(:,:,i,j);
         end
     end
-    E_C = alpha_val*2*pi*sum(sum(coulomb_energy_field));
+    E_C = -alpha_val*2*pi*sum(sum(coulomb_energy_field));
 
 
 
@@ -155,23 +156,26 @@ while t<t_final
     Q_top_init = Q_top;
     Q_top=sum(sum(rho))*dx*dy;  % topological charge
     S_z=sum(sum(m(:,:,3)));           % total spin in z-direction
+    S_x=sum(sum(m(:,:,1)));      
+    S_y=sum(sum(m(:,:,2)));      
 
-    cent_of_mass_x = sum(sum(rho.*xx))/Q_top*dx*dy;
-    cent_of_mass_y = sum(sum(rho.*yy))/Q_top*dx*dy;
-    variance = sum(sum(rho.*((xx-cent_of_mass_x).^2+(yy-cent_of_mass_y).^2)))/Q_top*dx*dy;
-    st_dev = sqrt(variance);
 
-    m_dx=(m(mod(1:N,N)+1,:,:)-m(mod(-1:N-2,N)+1,:,:))/(2*dx); 
-    m_dy=(m(:,mod(1:N,N)+1,:)-m(:,mod(-1:N-2,N)+1,:))/(2*dy);
+    % track skyrmion c.o.m.
+    %cent_of_mass_x = sum(sum(rho.*xx))/Q_top*dx*dy;
+    %cent_of_mass_y = sum(sum(rho.*yy))/Q_top*dx*dy;
+    %variance = sum(sum(rho.*((xx-cent_of_mass_x).^2+(yy-cent_of_mass_y).^2)))/Q_top*dx*dy;
+    %st_dev = sqrt(variance);
+
+    m_dx=(m(2:N,1:N-1,:)-m(1:N-1,1:N-1,:))/(dx); 
+    m_dy=(m(1:N-1,2:N,:)-m(1:N-1,1:N-1,:))/(dy);
 
     E_B = b_val*S_z;    % B energy
     E_LL = sum(sum(-stiff_val/2 * (sum(m_dx.^2+m_dy.^2))));   % stiffness energy
-    E_El = e_val*sum(sum(xx.*rho));   % Applied electric field energy
     Q_top_list(length(Q_top_list)+1)=Q_top;
     E_B_list(length(E_B_list)+1)=E_B;
     E_LL_list(length(E_LL_list)+1)=E_LL;
     E_C_list(length(E_C_list)+1)=E_C;
-    E_El_list(length(E_El_list)+1)=E_El;
+    Spin_list(length(Spin_list)+1,:)=[S_x S_y S_z];
 
     % check norm is preserved
     m_norm=sqrt(sum(m.^2,3));
@@ -181,31 +185,32 @@ while t<t_final
     %quiver(xx(:,N/2),zeros(1,N),m(N/2,:,1),m(N/2,:,3))  % 1D slice
     hold on
     %quiver(cent_of_mass_x,cent_of_mass_y,st_dev,0,'r')  %radius vector
-    contour(xx-dx/2,yy-dy/2,rho_avg,10) % color plot
+    contour(xx(1:N-1,1:N-1)-dx/2,yy(1:N-1,1:N-1)-dy/2,rho_avg(1:N-1,1:N-1),10) % color plot
     hold off
     axis([xlow xhigh ylow yhigh])
     drawnow
     
     % reset for new loop
     m_init=m;
-    t=t+dt;
+    t=t+dt
     m_full(:,:,:,t_ind) = m;
     rho_full(:,:,t_ind) = rho;
     t_ind=t_ind+1;
 end
 
-E_total_list = E_B_list+E_LL_list+E_C_list+E_El_list;
+E_total_list = E_B_list+E_LL_list+E_C_list;
 
 % to plot one of the energies:
 % plot(1:length(Q_top_list),Q_top_list)
 % plot(1:length(E_total_list),E_total_list)
-% plot(1:length(E_B_list),E_B_list,1:length(E_LL_list),E_LL_list,1:length(E_C_list),E_C_list,1:length(E_El_list),E_El_list)
+% plot(1:length(E_B_list),E_B_list,1:length(E_LL_list),E_LL_list,1:length(E_C_list),E_C_list,1:length(E_total_list),E_total_list)
 
 % draw saved data with no lag, can copypaste to console to do again
 for i = 1:t_ind
+    E_C_list(i)
     quiver(xx,yy,m_full(:,:,1,i),m_full(:,:,2,i))
     hold on
-    contour(xx,yy,rho_full(:,:,i),10) % color plot
+    contour(xx(1:N-1,1:N-1)-dx/2,yy(1:N-1,1:N-1)-dy/2,rho_full(1:N-1,1:N-1,i),10) % color plot
     hold off
     drawnow
 end
