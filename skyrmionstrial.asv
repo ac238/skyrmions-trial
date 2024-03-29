@@ -142,7 +142,7 @@ while t<t_final
             coulomb_energy_field = coulomb_energy_field + rho.*rho(i,j).*energy_dist(:,:,i,j);
         end
     end
-    E_C = -alpha_val*2*pi*sum(sum(coulomb_energy_field));
+    E_C = alpha_val*2*pi*sum(sum(coulomb_energy_field));
 
 
 
@@ -195,9 +195,10 @@ end
 E_total_list = E_B_list+E_LL_list+E_C_list;
 
 % to plot one of the energies:
-% plot(1:length(Q_top_list),Q_top_list)
-% plot(1:length(E_total_list),E_total_list)
-% plot(1:length(E_B_list),E_B_list,1:length(E_LL_list),E_LL_list,1:length(E_C_list),E_C_list,1:length(E_total_list),E_total_list)
+% plot((1:length(Q_top_list))*dt,Q_top_list)
+% plot((1:length(E_total_list))*dt,E_total_list)
+% plot((1:length(E_B_list))*dt,E_B_list,(1:length(E_LL_list))*dt,E_LL_list,(1:length(E_C_list))*dt,-E_C_list,(1:length(E_total_list))*dt,E_total_list)
+% plot((1:length(E_B_list))*dt,E_B_list,(1:length(E_LL_list))*dt,E_LL_list,(1:length(E_C_list))*dt,-E_C_list,(1:length(E_total_list))*dt,E_total_list)
 
 % draw saved data with no lag, can copypaste to console to do again
 for i = 1:t_ind

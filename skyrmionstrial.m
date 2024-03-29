@@ -57,7 +57,7 @@ e_val = -q_electron^2*E_field/(8*pi^2*casimir*nu_level*B_field);
 b_val = 0;
 stiff_val = 1;
 e_val = 0;
-alpha_val = 70 ;
+alpha_val = 7.1;
 
 
 t=0;
@@ -142,7 +142,7 @@ while t<t_final
             coulomb_energy_field = coulomb_energy_field + rho.*rho(i,j).*energy_dist(:,:,i,j);
         end
     end
-    E_C = -alpha_val*2*pi*sum(sum(coulomb_energy_field));
+    E_C = alpha_val*2*pi*sum(sum(coulomb_energy_field));
 
 
 
@@ -197,7 +197,8 @@ E_total_list = E_B_list+E_LL_list+E_C_list;
 % to plot one of the energies:
 % plot((1:length(Q_top_list))*dt,Q_top_list)
 % plot((1:length(E_total_list))*dt,E_total_list)
-% plot((1:length(E_B_list))*dt,E_B_list,(1:length(E_LL_list))*dt,E_LL_list,(1:length(E_C_list))*dt,E_C_list,(1:length(E_total_list))*dt,E_total_list)
+% plot((1:length(E_B_list))*dt,E_B_list,(1:length(E_LL_list))*dt,E_LL_list,(1:length(E_C_list))*dt,-E_C_list,(1:length(E_total_list))*dt,E_total_list)
+% plot((1:length(Spin_list(:,1)))*dt,Spin_list(:,1),(1:length(Spin_list(:,2)))*dt,Spin_list(:,2),(1:length(Spin_list(:,3)))*dt,Spin_list(:,3))
 
 % draw saved data with no lag, can copypaste to console to do again
 for i = 1:t_ind
