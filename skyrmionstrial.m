@@ -1,7 +1,7 @@
 
 
 % create bounds of graph
-N=70;
+N=100;
 dx=1;
 dy=1;
 xlow=-(N+1)/2;
@@ -12,7 +12,7 @@ yhigh=(N-1)/2;
 axis([xlow xhigh ylow yhigh])
 
 % initialize skyrmion according to QHMF 35
-n=1;
+n=2;
 z_0=0;
 lambda=5;
 
@@ -20,6 +20,15 @@ omega = ((xx + yy*1i - z_0)/lambda).^n;
 m_init(:,:,1)=4*real(omega)./((abs(omega)).^2+4);
 m_init(:,:,2)=4*imag(omega)./((abs(omega)).^2+4);
 m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
+
+
+% optional: set boundary spins to +z
+%for i = 1:N
+%    m_init(1,i,:) = [0 0 0];
+%    m_init(i,1,:) = [0 0 0];
+%    m_init(N,i,:) = [0 0 0];
+%    m_init(i,N,:) = [0 0 0];
+%end
 
 
 % initialize Coulomb distance matrix
@@ -56,15 +65,15 @@ e_val = -q_electron^2*E_field/(8*pi^2*casimir*nu_level*B_field);
 %custom parameters
 b_val = 0;
 stiff_val = 1;
-e_val = 0;
-alpha_val = 7.1;
+e_val = 1.1;
+alpha_val = 0;
 
 
 t=0;
 t_final=100;
 dt=0.01;
 t_ind=1;
-El_freq = 1.1;
+El_freq = 5 *2*pi/t_final;
 Q_top = -n;
 Q_top_list = []; % store values for final plot
 E_B_list = [];
@@ -197,11 +206,12 @@ E_total_list = E_B_list+E_LL_list+E_C_list;
 % to plot one of the energies:
 % plot((1:length(Q_top_list))*dt,Q_top_list)
 % plot((1:length(E_total_list))*dt,E_total_list)
-% plot((1:length(E_B_list))*dt,E_B_list,(1:length(E_LL_list))*dt,E_LL_list,(1:length(E_C_list))*dt,-E_C_list,(1:length(E_total_list))*dt,E_total_list)
+% plot((1:length(E_B_list))*dt,E_B_list,(1:length(E_LL_list))*dt,E_LL_list,(1:length(E_C_list))*dt,E_C_list,(1:length(E_total_list))*dt,E_total_list)
 % plot((1:length(Spin_list(:,1)))*dt,Spin_list(:,1),(1:length(Spin_list(:,2)))*dt,Spin_list(:,2),(1:length(Spin_list(:,3)))*dt,Spin_list(:,3))
 
 % draw saved data with no lag, can copypaste to console to do again
 for i = 1:t_ind
+    i = i*10;
     E_total_list(i)
     quiver(xx,yy,m_full(:,:,1,i),m_full(:,:,2,i))
     hold on
