@@ -1,7 +1,7 @@
 
 
 % create bounds of graph
-N=100;
+N=70;
 dx=1;
 dy=1;
 xlow=-(N+1)/2;
@@ -12,7 +12,7 @@ yhigh=(N-1)/2;
 axis([xlow xhigh ylow yhigh])
 
 % initialize skyrmion according to QHMF 35
-n=2;
+n=1;
 z_0=0;
 lambda=5;
 
@@ -32,18 +32,18 @@ m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
 
 
 % initialize Coulomb distance matrix
-for i = 1:N
-    for j = 1:N
-        for k = 1:3
-            dist_x(:,:,k,i,j) = (xx-xx(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
-            dist_x(i,j,k,i,j) = 0;
-            dist_y(:,:,k,i,j) = (yy-yy(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
-            dist_y(i,j,k,i,j) = 0;
-        end
-        energy_dist(:,:,i,j) = ((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^-0.5;
-        energy_dist(i,j,i,j) = 0;
-    end
-end
+%for i = 1:N
+%    for j = 1:N
+%        for k = 1:3
+%            dist_x(:,:,k,i,j) = (xx-xx(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
+%            dist_x(i,j,k,i,j) = 0;
+%            dist_y(:,:,k,i,j) = (yy-yy(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
+%            dist_y(i,j,k,i,j) = 0;
+%        end
+%        energy_dist(:,:,i,j) = ((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^-0.5;
+%        energy_dist(i,j,i,j) = 0;
+%    end
+%end
 
 
 % physical constants
@@ -65,7 +65,7 @@ e_val = -q_electron^2*E_field/(8*pi^2*casimir*nu_level*B_field);
 %custom parameters
 b_val = 0;
 stiff_val = 1;
-e_val = 1.1;
+e_val = 6.2;
 alpha_val = 0;
 
 
@@ -73,7 +73,7 @@ t=0;
 t_final=100;
 dt=0.01;
 t_ind=1;
-El_freq = 5 *2*pi/t_final;
+El_freq = 0.05 *2*pi/t_final;
 Q_top = -n;
 Q_top_list = []; % store values for final plot
 E_B_list = [];
@@ -99,16 +99,16 @@ while t<t_final
     m(:,:,2) = m(:,:,2) + dt/6*(m2_k1 + 2*m2_k2 + 2*m2_k3 + m2_k4);
 
     % Electric field term with RK4
-    m_k1 = (deriv_center_y(m))/(2*dy);
-    m_k2 = (deriv_center_y(m) + dt/2*(deriv_center_y(m_k1)))/(2*dy);
-    m_k3 = (deriv_center_y(m) + dt/2*(deriv_center_y(m_k2)))/(2*dy);
-    m_k4 = (deriv_center_y(m) + dt*(deriv_center_y(m_k3)))/(2*dy);
+    m_k1 = (Elec_change_y(m))/(2*dy);
+    m_k2 = (Elec_change_y(m) + dt/2*(Elec_change_y(m_k1)))/(2*dy);
+    m_k3 = (Elec_change_y(m) + dt/2*(Elec_change_y(m_k2)))/(2*dy);
+    m_k4 = (Elec_change_y(m) + dt*(Elec_change_y(m_k3)))/(2*dy);
 
-    El = e_val*cos(El_freq*t);
+    El = -e_val*cos(El_freq*t);
     m = m + El*dt/6*(m_k1 + 2*m_k2 + 2*m_k3 + m_k4);
     m = m./(sqrt(sum(m.^2,3))); % Renormalize
 
-    % L-L term with RK4 (only works for dx=dy) (doesn't conserve norm=1)
+    % Stiffness term with RK4 (only works for dx=dy) (doesn't conserve norm=1)
     m_k1 = stiff_val/(dx^2) * (stiffness(m));
     m_k2arg = m+dt/2*m_k1;
     m_k2 = stiff_val/(dx^2) * (stiffness(m_k2arg));
@@ -188,7 +188,7 @@ while t<t_final
     %quiver(xx(:,N/2),zeros(1,N),m(N/2,:,1),m(N/2,:,3))  % 1D slice
     hold on
     %quiver(cent_of_mass_x,cent_of_mass_y,st_dev,0,'r')  %radius vector
-    contour(xx(1:N-1,1:N-1)-dx/2,yy(1:N-1,1:N-1)-dy/2,rho_avg(1:N-1,1:N-1),10) % color plot
+    contour(xx(1:N-1,1:N-1)-dx/2,yy(1:N-1,1:N-1)-dy/2,rho(1:N-1,1:N-1),10) % color plot
     hold off
     axis([xlow xhigh ylow yhigh])
     drawnow
