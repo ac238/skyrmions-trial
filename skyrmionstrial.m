@@ -1,7 +1,7 @@
 
 
 % create bounds of graph
-N=70;
+N=100;
 dx=1;
 dy=1;
 xlow=-(N+1)/2;
@@ -20,15 +20,6 @@ omega = ((xx + yy*1i - z_0)/lambda).^n;
 m_init(:,:,1)=4*real(omega)./((abs(omega)).^2+4);
 m_init(:,:,2)=4*imag(omega)./((abs(omega)).^2+4);
 m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
-
-
-% optional: set boundary spins to +z
-%for i = 1:N
-%    m_init(1,i,:) = [0 0 0];
-%    m_init(i,1,:) = [0 0 0];
-%    m_init(N,i,:) = [0 0 0];
-%    m_init(i,N,:) = [0 0 0];
-%end
 
 
 % initialize Coulomb distance matrix
@@ -62,11 +53,11 @@ b_val = g_factor*B_field*q_electron/(2*mass_electron);
 alpha_val = q_electron^3/(8*pi^2*casimir*nu_level*B_field*dielectric);
 e_val = -q_electron^2*E_field/(8*pi^2*casimir*nu_level*B_field);
 
-%custom parameters
-b_val = 0.13; %positive?
+%custom parameters, all positive!
+b_val = 0.13;
 stiff_val = 1;
-e_val = -2.2; %negative
-alpha_val = 0.7; %positive
+e_val = 2.2;
+alpha_val = 0.7;
 
 
 t=0;
@@ -104,8 +95,8 @@ while t<t_final
     m_k3 = (Elec_change_y(m) + dt/2*(Elec_change_y(m_k2)))/(2*dy);
     m_k4 = (Elec_change_y(m) + dt*(Elec_change_y(m_k3)))/(2*dy);
 
-    El = -e_val*cos(El_freq*t);
-    m = m + El*dt/6*(m_k1 + 2*m_k2 + 2*m_k3 + m_k4);
+    El = e_val*cos(El_freq*t);
+    m = m - El*dt/6*(m_k1 + 2*m_k2 + 2*m_k3 + m_k4);
     m = m./(sqrt(sum(m.^2,3))); % Renormalize
 
     % Stiffness term with RK4 (only works for dx=dy) (doesn't conserve norm=1)
@@ -172,7 +163,7 @@ while t<t_final
     m_dx=(m(2:N,1:N-1,:)-m(1:N-1,1:N-1,:))/(dx); 
     m_dy=(m(1:N-1,2:N,:)-m(1:N-1,1:N-1,:))/(dy);
 
-    E_B = b_val*S_z;    % B energy
+    E_B = -b_val*S_z;    % B energy
     E_LL = sum(sum(stiff_val/2 * (sum(m_dx.^2+m_dy.^2))));   % stiffness energy
     Q_top_list(length(Q_top_list)+1)=Q_top;
     E_B_list(length(E_B_list)+1)=E_B;

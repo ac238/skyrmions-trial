@@ -1,7 +1,7 @@
 
 
 % create bounds of graph
-N=70;
+N=50;
 dx=1;
 dy=1;
 xlow=-(N+1)/2;
@@ -20,15 +20,6 @@ omega = ((xx + yy*1i - z_0)/lambda).^n;
 m_init(:,:,1)=4*real(omega)./((abs(omega)).^2+4);
 m_init(:,:,2)=4*imag(omega)./((abs(omega)).^2+4);
 m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
-
-
-% optional: set boundary spins to +z
-%for i = 1:N
-%    m_init(1,i,:) = [0 0 0];
-%    m_init(i,1,:) = [0 0 0];
-%    m_init(N,i,:) = [0 0 0];
-%    m_init(i,N,:) = [0 0 0];
-%end
 
 
 % initialize Coulomb distance matrix
@@ -62,18 +53,18 @@ b_val = g_factor*B_field*q_electron/(2*mass_electron);
 alpha_val = q_electron^3/(8*pi^2*casimir*nu_level*B_field*dielectric);
 e_val = -q_electron^2*E_field/(8*pi^2*casimir*nu_level*B_field);
 
-%custom parameters
-b_val = -0.13; %negative?
+%custom parameters, all positive!
+b_val = 0.13; %positive?
 stiff_val = 1;
-e_val = -2.2; %negative
-alpha_val = 0.7; %positive
+e_val = 2.2;
+alpha_val = 0.7;
 
 
 t=0;
 t_final=100;
 dt=0.01;
 t_ind=1;
-El_freq = 5 *2*pi/t_final; %num of cycles * 2pi*
+El_freq = 5 *2*pi/t_final; %num of cycles * 2pi*t_final
 Q_top = -n;
 Q_top_list = []; % store values for final plot
 E_B_list = [];
