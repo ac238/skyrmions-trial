@@ -7,3 +7,19 @@ From https://github.com/ac238/skyrmions-trial
 Already up-to-date.
 /var/spool/slurm/job7945718/slurm_script: line 16: matlab: command not found
 Job finished
+[dev 784f750] Supercomputer
+ Committer: Alexander Canright <ac238@bc9u23n1.nots.rice.edu>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly:
+
+    git config --global user.name "Your Name"
+    git config --global user.email you@example.com
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 2 files changed, 25 insertions(+)
+ create mode 100644 slurm-7945718.out
+fatal: could not read Username for 'https://github.com': No such device or address

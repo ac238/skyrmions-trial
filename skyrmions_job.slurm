@@ -12,10 +12,15 @@ if [[ -d $PROJECTS/mf23/ac238/skyrmions-trial && -w $PROJECTS/mf23/ac238/skyrmio
      echo "Conditional satisfied"
      cd $PROJECTS/mf23/ac238/skyrmions-trial
      git checkout dev
+     echo "Switched to dev"
      git pull origin dev
+     echo "Pulled from dev"
      matlab -r "skyrmionstrial; exit"
-     echo "Job finished"
+     echo "Ran MATLAB"
      git add -A
+     echo "Added all"
      git commit -m "Supercomputer"
+     echo "Committed"
      git push origin dev
+     echo "Pushed to dev"
 fi
