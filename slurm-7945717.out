@@ -1,0 +1,14 @@
+My job ran on: echo bc9u23n1
+Conditional satisfied
+There is no tracking information for the current branch.
+Please specify which branch you want to merge with.
+See git-pull(1) for details
+
+    git pull <remote> <branch>
+
+If you wish to set tracking information for this branch you can do so with:
+
+    git branch --set-upstream-to=origin/<branch> dev
+
+/var/spool/slurm/job7945717/slurm_script: line 15: matlab: command not found
+Job finished

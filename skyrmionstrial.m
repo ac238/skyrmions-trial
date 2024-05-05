@@ -1,7 +1,7 @@
 
 
 % create bounds of graph
-N=50;
+N=100;
 dx=1;
 dy=1;
 xlow=-(N+1)/2;
