@@ -11,7 +11,8 @@ echo "My job ran on:" echo $SLURM_NODELIST
 if [[ -d $PROJECTS/mf23/ac238/skyrmions-trial && -w $PROJECTS/mf23/ac238/skyrmions-trial ]]; then
      echo "Conditional satisfied"
      cd $PROJECTS/mf23/ac238/skyrmions-trial
-     git pull
+     git checkout dev
+     git pull origin dev
      matlab -r "skyrmionstrial; exit"
      echo "Job finished"
      git add -A
