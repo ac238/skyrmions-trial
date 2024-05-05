@@ -1,7 +1,7 @@
 
 
 % create bounds of graph
-N=100;
+N=50;
 dx=1;
 dy=1;
 xlow=-(N+1)/2;
@@ -57,11 +57,11 @@ e_val = -q_electron^2*E_field/(8*pi^2*casimir*nu_level*B_field);
 b_val = 0.13;
 stiff_val = 1;
 e_val = 2.2;
-alpha_val = 0.7;
+alpha_val = 0;
 
 
 t=0;
-t_final=100;
+t_final=10;
 dt=0.01;
 t_ind=1;
 El_freq = 5 *2*pi/t_final; %num of cycles * 2pi*t_final
@@ -182,11 +182,12 @@ while t<t_final
     contour(xx(1:N-1,1:N-1)-dx/2,yy(1:N-1,1:N-1)-dy/2,rho(1:N-1,1:N-1),10) % color plot
     hold off
     axis([xlow xhigh ylow yhigh])
+    title(t)
     drawnow
     
     % reset for new loop
     m_init=m;
-    t=t+dt
+    t=t+dt;
     m_full(:,:,:,t_ind) = m;
     rho_full(:,:,t_ind) = rho;
     t_ind=t_ind+1;
@@ -194,21 +195,28 @@ end
 
 E_total_list = E_B_list+E_LL_list+E_C_list;
 
-% to plot one of the energies:
-% plot((1:length(Q_top_list))*dt,Q_top_list)
-% plot((1:length(E_total_list))*dt,E_total_list)
-% plot((1:length(E_B_list))*dt,E_B_list,(1:length(E_LL_list))*dt,E_LL_list,(1:length(E_C_list))*dt,E_C_list,(1:length(E_total_list))*dt,E_total_list)
-% plot((1:length(Spin_list(:,1)))*dt,Spin_list(:,1),(1:length(Spin_list(:,2)))*dt,Spin_list(:,2),(1:length(Spin_list(:,3)))*dt,Spin_list(:,3))
+% plotting all the energies
+plot((1:length(Q_top_list))*dt,Q_top_list)
+drawnow
+saveas(gcf,"fig_Q_top.m")
+plot((1:length(E_B_list))*dt,E_B_list,(1:length(E_LL_list))*dt,E_LL_list,(1:length(E_C_list))*dt,E_C_list,(1:length(E_total_list))*dt,E_total_list)
+legend("Zeeman","Stiffness","Coulomb","Total")
+drawnow
+saveas(gcf,"fig_Energies.m")
+plot((1:length(Spin_list(:,1)))*dt,Spin_list(:,1),(1:length(Spin_list(:,2)))*dt,Spin_list(:,2),(1:length(Spin_list(:,3)))*dt,Spin_list(:,3))
+legend("S_x","S_y","S_z")
+drawnow
+saveas(gcf,"fig_Spin_components")
 
 % draw saved data with no lag, can copypaste to console to do again
 for i = 1:t_ind
     i = i*10;
-    E_total_list(i)
     quiver(xx,yy,m_full(:,:,1,i),m_full(:,:,2,i))
-    hold on
-    contour(xx(1:N-1,1:N-1)-dx/2,yy(1:N-1,1:N-1)-dy/2,rho_full(1:N-1,1:N-1,i),10) % color plot
-    hold off
     drawnow
+    saveas(gcf,"zz_quiver_frame"+string(i)+".png")
+    contour(xx(1:N-1,1:N-1)-dx/2,yy(1:N-1,1:N-1)-dy/2,rho_full(1:N-1,1:N-1,i),10) % color plot
+    drawnow
+    saveas(gcf,"zz_contour_frame"+string(i)+".png")
 end
 
 
