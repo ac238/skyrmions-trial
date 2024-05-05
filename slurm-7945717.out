@@ -12,3 +12,19 @@ If you wish to set tracking information for this branch you can do so with:
 
 /var/spool/slurm/job7945717/slurm_script: line 15: matlab: command not found
 Job finished
+[dev 0d32476] Supercomputer
+ Committer: Alexander Canright <ac238@bc9u23n1.nots.rice.edu>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly:
+
+    git config --global user.name "Your Name"
+    git config --global user.email you@example.com
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 2 files changed, 15 insertions(+), 1 deletion(-)
+ create mode 100644 slurm-7945717.out
+fatal: could not read Username for 'https://github.com': No such device or address

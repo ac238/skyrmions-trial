@@ -1,0 +1,9 @@
+My job ran on: echo bc9u23n1
+Conditional satisfied
+Already on 'dev'
+M	slurm-7945717.out
+From https://github.com/ac238/skyrmions-trial
+ * branch            dev        -> FETCH_HEAD
+Already up-to-date.
+/var/spool/slurm/job7945718/slurm_script: line 16: matlab: command not found
+Job finished
