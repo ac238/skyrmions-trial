@@ -38,3 +38,5 @@ href="matlab:opengl('problems')">here</a>.]
 ans = 
 
     "initialized"
+/var/spool/slurm/job7950493/slurm_script: line 30: 55106 Killed                  matlab -r "skyrmionstrial; exit"
+Trying code: git add -A
