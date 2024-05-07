@@ -11,16 +11,20 @@ echo "My job ran on:" echo $SLURM_NODELIST
 if [[ -d $PROJECTS/mf23/ac238/skyrmions-trial && -w $PROJECTS/mf23/ac238/skyrmions-trial ]]; then
      echo "Conditional satisfied"
      cd $PROJECTS/mf23/ac238/skyrmions-trial
-     git checkout dev
-     echo "Switched to dev"
-     git pull origin dev
-     echo "Pulled from dev"
+     module load GCC MATLAB/2023b
+     module load GCCcore/12.3.0
+     module load Python/3.11.3
+     module list
+     git checkout nots
+     echo "Switched to nots branch"
+     git pull origin nots
+     echo "Pulled from nots branch"
      matlab -r "skyrmionstrial; exit"
      echo "Ran MATLAB"
      git add -A
      echo "Added all"
-     git commit -m "Supercomputer"
+     git commit -m "56532"
      echo "Committed"
-     git push origin dev
-     echo "Pushed to dev"
+     git push origin nots
+     echo "Pushed to nots"
 fi

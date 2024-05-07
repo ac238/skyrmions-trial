@@ -208,8 +208,10 @@ legend("S_x","S_y","S_z")
 drawnow
 saveas(gcf,"fig_Spin_components")
 
+testvar=1
+
 % draw saved data with no lag, can copypaste to console to do again
-for i = 1:t_ind
+for i = 1:(t_ind/10)
     i = i*10;
     quiver(xx,yy,m_full(:,:,1,i),m_full(:,:,2,i))
     drawnow

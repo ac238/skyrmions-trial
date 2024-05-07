@@ -1,0 +1,12 @@
+My job ran on: echo bc9u23n7
+Conditional satisfied
+Already on 'nots'
+M	skyrmions_job.slurm
+M	skyrmionstrial.m
+Switched to nots branch
+From https://github.com/ac238/skyrmions-trial
+ * branch            nots       -> FETCH_HEAD
+Already up-to-date.
+Pulled from nots branch
+/var/spool/slurm/job7947623/slurm_script: line 18: matlab: command not found
+Ran MATLAB

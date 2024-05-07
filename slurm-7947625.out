@@ -1,0 +1,10 @@
+My job ran on: echo bc6u7n2
+Conditional satisfied
+Already on 'nots'
+M	skyrmions_job.slurm
+M	skyrmionstrial.m
+Switched to nots branch
+fatal: Not a git repository (or any parent up to mount point /projects)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+fatal: /usr/libexec/git-core/git-pull cannot be used without a working tree.
+Pulled from nots branch

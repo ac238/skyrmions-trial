@@ -1,0 +1,22 @@
+My job ran on: echo bc6u7n2
+Conditional satisfied
+fatal: Unable to create '/projects/mf23/ac238/skyrmions-trial/.git/index.lock': File exists.
+
+If no other git process is currently running, this probably means a
+git process crashed in this repository earlier. Make sure no other git
+process is running and remove the file manually to continue.
+Switched to nots branch
+fatal: Not a git repository (or any parent up to mount point /projects)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+Pulled from nots branch
+/var/spool/slurm/job7947624/slurm_script: line 18: matlab: command not found
+Ran MATLAB
+fatal: Not a git repository (or any parent up to mount point /projects)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+Added all
+fatal: Not a git repository (or any parent up to mount point /projects)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+Committed
+fatal: Not a git repository (or any parent up to mount point /projects)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+Pushed to nots
