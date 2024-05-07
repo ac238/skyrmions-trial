@@ -10,3 +10,25 @@ Already up-to-date.
 Pulled from nots branch
 /var/spool/slurm/job7947623/slurm_script: line 18: matlab: command not found
 Ran MATLAB
+Added all
+[nots 6a49198] 56532
+ Committer: Alexander Canright <ac238@bc9u23n7.nots.rice.edu>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly:
+
+    git config --global user.name "Your Name"
+    git config --global user.email you@example.com
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 6 files changed, 60 insertions(+), 8 deletions(-)
+ create mode 100644 slurm-7947623.out
+ create mode 100644 slurm-7947624.out
+ create mode 100644 slurm-7947625.out
+ create mode 100644 slurm-7947627.out
+Committed
+fatal: could not read Username for 'https://github.com': No such device or address
+Pushed to nots

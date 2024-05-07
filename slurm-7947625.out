@@ -8,3 +8,18 @@ fatal: Not a git repository (or any parent up to mount point /projects)
 Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
 fatal: /usr/libexec/git-core/git-pull cannot be used without a working tree.
 Pulled from nots branch
+MATLAB is selecting SOFTWARE OPENGL rendering.
+Opening log file:  /home/ac238/java.log.59472
+
+                            < M A T L A B (R) >
+                  Copyright 1984-2023 The MathWorks, Inc.
+             R2023b Update 5 (23.2.0.2459199) 64-bit (glnxa64)
+                             November 28, 2023
+
+ 
+To get started, type doc.
+For product information, visit www.mathworks.com.
+ 
+[Warning: MATLAB has disabled some advanced graphics rendering features by
+switching to software OpenGL. For more information, click <a
+href="matlab:opengl('problems')">here</a>.] 
