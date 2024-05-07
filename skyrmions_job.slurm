@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=running_testcode
+#SBATCH --job-name=skyrmion
 #SBATCH --account=commons
 #SBATCH --partition=commons
 #SBATCH --ntasks=1
@@ -11,20 +11,20 @@ echo "My job ran on:" echo $SLURM_NODELIST
 if [[ -d $PROJECTS/mf23/ac238/skyrmions-trial && -w $PROJECTS/mf23/ac238/skyrmions-trial ]]; then
      echo "Conditional satisfied"
      cd $PROJECTS/mf23/ac238/skyrmions-trial
+     echo "Trying code: module load"
      module load GCC MATLAB/2023b
      module load GCCcore/12.3.0
      module load Python/3.11.3
      module list
      git checkout nots
-     echo "Switched to nots branch"
+     echo "Trying code: git pull origin nots"
      git pull origin nots
-     echo "Pulled from nots branch"
+     echo "Trying code: matlab -r"
      matlab -r "skyrmionstrial; exit"
-     echo "Ran MATLAB"
+     echo "Trying code: git add -A"
      git add -A
-     echo "Added all"
-     git commit -m "56532"
-     echo "Committed"
+     echo "Trying code: git commit"
+     git commit -m "57231"
+     echo "Trying code: git push origin nots"
      git push origin nots
-     echo "Pushed to nots"
 fi

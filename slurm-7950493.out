@@ -1,0 +1,40 @@
+My job ran on: echo bc6u23n3
+Conditional satisfied
+Trying code: module load
+
+Currently Loaded Modules:
+  1) StdEnv               6) binutils/2.40        11) SQLite/3.42.0
+  2) GCC/4.8.3            7) bzip2/.1.0.8    (H)  12) XZ/.5.4.2     (H)
+  3) MATLAB/2023b         8) ncurses/6.4          13) libffi/3.4.4
+  4) GCCcore/12.3.0       9) libreadline/8.2      14) OpenSSL/1.1
+  5) zlib/.1.2.13   (H)  10) Tcl/8.6.13           15) Python/3.11.3
+
+  Where:
+   H:  Hidden Module
+
+ 
+
+Already on 'nots'
+M	skyrmions_job.slurm
+Trying code: git pull origin nots
+fatal: unable to access 'https://github.com/ac238/skyrmions-trial.git/': error setting certificate file: /etc/ssl/certs/ca-certificates.crt
+Trying code: matlab -r
+MATLAB is selecting SOFTWARE OPENGL rendering.
+Opening log file:  /home/ac238/java.log.55106
+
+                            < M A T L A B (R) >
+                  Copyright 1984-2023 The MathWorks, Inc.
+             R2023b Update 5 (23.2.0.2459199) 64-bit (glnxa64)
+                             November 28, 2023
+
+ 
+To get started, type doc.
+For product information, visit www.mathworks.com.
+ 
+[Warning: MATLAB has disabled some advanced graphics rendering features by
+switching to software OpenGL. For more information, click <a
+href="matlab:opengl('problems')">here</a>.] 
+
+ans = 
+
+    "initialized"
