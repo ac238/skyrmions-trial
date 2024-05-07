@@ -36,3 +36,22 @@ switching to software OpenGL. For more information, click <a
 href="matlab:opengl('problems')">here</a>.] 
 /var/spool/slurm/job7947627/slurm_script: line 30: 59580 Killed                  matlab -r "skyrmionstrial; exit"
 Ran MATLAB
+Added all
+[nots 015c345] 56532
+ Committer: Alexander Canright <ac238@bc6u7n2.nots.rice.edu>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly:
+
+    git config --global user.name "Your Name"
+    git config --global user.email you@example.com
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 3 files changed, 73 insertions(+)
+Committed
+fatal: unable to access 'https://github.com/ac238/skyrmions-trial.git/': error setting certificate file: /etc/ssl/certs/ca-certificates.crt
+Pushed to nots
+slurmstepd: error: Detected 1 oom-kill event(s) in step 7947627.batch cgroup. Some of your processes may have been killed by the cgroup out-of-memory handler.

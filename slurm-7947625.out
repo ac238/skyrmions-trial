@@ -23,3 +23,5 @@ For product information, visit www.mathworks.com.
 [Warning: MATLAB has disabled some advanced graphics rendering features by
 switching to software OpenGL. For more information, click <a
 href="matlab:opengl('problems')">here</a>.] 
+/var/spool/slurm/job7947625/slurm_script: line 26: 59472 Killed                  matlab -r "skyrmionstrial; exit"
+Ran MATLAB
