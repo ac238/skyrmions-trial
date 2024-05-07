@@ -1,4 +1,7 @@
 
+% open file to log outputs
+fileID = fopen('skyrmionstrial.out','w');
+
 
 % create bounds of graph
 N=100;
@@ -20,6 +23,8 @@ omega = ((xx + yy*1i - z_0)/lambda).^n;
 m_init(:,:,1)=4*real(omega)./((abs(omega)).^2+4);
 m_init(:,:,2)=4*imag(omega)./((abs(omega)).^2+4);
 m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
+
+"initialized"
 
 
 % initialize Coulomb distance matrix
@@ -71,6 +76,8 @@ E_B_list = [];
 E_LL_list = [];
 E_C_list = [];
 Spin_list = [];
+
+
 
 while t<t_final
 
@@ -175,15 +182,15 @@ while t<t_final
     m_norm=sqrt(sum(m.^2,3));
     
     % plot
-    quiver(xx,yy,m(:,:,1),m(:,:,2)) % full 2D vector field
+    %quiver(xx,yy,m(:,:,1),m(:,:,2)) % full 2D vector field
     %quiver(xx(:,N/2),zeros(1,N),m(N/2,:,1),m(N/2,:,3))  % 1D slice
-    hold on
+    %hold on
     %quiver(cent_of_mass_x,cent_of_mass_y,st_dev,0,'r')  %radius vector
-    contour(xx(1:N-1,1:N-1)-dx/2,yy(1:N-1,1:N-1)-dy/2,rho(1:N-1,1:N-1),10) % color plot
-    hold off
-    axis([xlow xhigh ylow yhigh])
-    title(t)
-    drawnow
+    %contour(xx(1:N-1,1:N-1)-dx/2,yy(1:N-1,1:N-1)-dy/2,rho(1:N-1,1:N-1),10) % color plot
+    %hold off
+    %axis([xlow xhigh ylow yhigh])
+    %title(t)
+    %drawnow
     
     % reset for new loop
     m_init=m;
@@ -192,6 +199,8 @@ while t<t_final
     rho_full(:,:,t_ind) = rho;
     t_ind=t_ind+1;
 end
+
+"completed time evolution"
 
 E_total_list = E_B_list+E_LL_list+E_C_list;
 
@@ -208,7 +217,9 @@ legend("S_x","S_y","S_z")
 drawnow
 saveas(gcf,"fig_Spin_components")
 
-testvar=1
+
+"created plots"
+
 
 % draw saved data with no lag, can copypaste to console to do again
 for i = 1:(t_ind/10)
@@ -220,6 +231,10 @@ for i = 1:(t_ind/10)
     drawnow
     saveas(gcf,"zz_contour_frame"+string(i)+".png")
 end
+
+"drew frames of evolution"
+
+fclose(fileID);
 
 
 
