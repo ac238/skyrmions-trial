@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=skyrmion
 #SBATCH --account=commons
-#SBATCH --partition=commons
-#SBATCH --ntasks=1
-#SBATCH --mem-per-cpu=1000m
-#SBATCH --time=00:30:00
+#SBATCH --partition=scavenge
+#SBATCH --ntasks=20
+#SBATCH --mem-per-cpu=1G
+#SBATCH --time=04:00:00
 #SBATCH --mail-user=ac238@rice.edu
 #SBATCH --mail-type=ALL
 echo "My job ran on:" echo $SLURM_NODELIST

@@ -197,7 +197,7 @@ while t<t_final
     t=t+dt;
     m_full(:,:,:,t_ind) = m;
     rho_full(:,:,t_ind) = rho;
-    t_ind=t_ind+1;
+    t_ind=t_ind+1
 end
 
 "completed time evolution"
