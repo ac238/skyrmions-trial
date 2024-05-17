@@ -1,7 +1,13 @@
 
+% open file to log outputs
+fileID = fopen('skyrmionstrial.out','w');
+
+% begin parallelization
+numCores = feature('numcores')
+p = parpool(numCores);
 
 % create bounds of graph
-N=50;
+N=100;
 dx=1;
 dy=1;
 xlow=-(N+1)/2;
@@ -21,47 +27,53 @@ m_init(:,:,1)=4*real(omega)./((abs(omega)).^2+4);
 m_init(:,:,2)=4*imag(omega)./((abs(omega)).^2+4);
 m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
 
+"initialized"
+
+
+
+% physical constants
+%B_field=1.1;
+%E_field=10.1;
+%q_electron=-3.1;
+%mass_electron=1.1;
+%rho_stiff=1.1;
+%dielectric=1.1;
+%g_factor=2.002;
+%casimir=0.5;
+%nu_level=1.0;
+
+%stiff_val = -rho_stiff*q_electron/(2*pi*casimir*nu_level*B_field);
+%b_val = g_factor*B_field*q_electron/(2*mass_electron);
+%alpha_val = q_electron^3/(8*pi^2*casimir*nu_level*B_field*dielectric);
+%e_val = -q_electron^2*E_field/(8*pi^2*casimir*nu_level*B_field);
+
+%custom parameters, all positive!
+b_val = 0.13;
+stiff_val = 0;
+e_val = 0;
+alpha_val = 0.7;
 
 % initialize Coulomb distance matrix
-for i = 1:N
-    for j = 1:N
-        for k = 1:3
-            dist_x(:,:,k,i,j) = (xx-xx(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
-            dist_x(i,j,k,i,j) = 0;
-            dist_y(:,:,k,i,j) = (yy-yy(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
-            dist_y(i,j,k,i,j) = 0;
+if alpha_val ~= 0
+    for i = 1:N
+        for j = 1:N
+            for k = 1:3
+                dist_x(:,:,k,i,j) = (xx-xx(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
+                dist_x(i,j,k,i,j) = 0;
+                dist_y(:,:,k,i,j) = (yy-yy(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
+                dist_y(i,j,k,i,j) = 0;
+            end
+            energy_dist(:,:,i,j) = ((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^-0.5;
+            energy_dist(i,j,i,j) = 0;
         end
-        energy_dist(:,:,i,j) = ((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^-0.5;
-        energy_dist(i,j,i,j) = 0;
     end
 end
 
 
-% physical constants
-B_field=1.1;
-E_field=10.1;
-q_electron=-3.1;
-mass_electron=1.1;
-rho_stiff=1.1;
-dielectric=1.1;
-g_factor=2.002;
-casimir=0.5;
-nu_level=1.0;
-
-stiff_val = -rho_stiff*q_electron/(2*pi*casimir*nu_level*B_field);
-b_val = g_factor*B_field*q_electron/(2*mass_electron);
-alpha_val = q_electron^3/(8*pi^2*casimir*nu_level*B_field*dielectric);
-e_val = -q_electron^2*E_field/(8*pi^2*casimir*nu_level*B_field);
-
-%custom parameters, all positive!
-b_val = 0.13;
-stiff_val = 1;
-e_val = 2.2;
-alpha_val = 0;
 
 
 t=0;
-t_final=10;
+t_final=50;
 dt=0.01;
 t_ind=1;
 El_freq = 5 *2*pi/t_final; %num of cycles * 2pi*t_final
@@ -72,7 +84,10 @@ E_LL_list = [];
 E_C_list = [];
 Spin_list = [];
 
+
+
 while t<t_final
+    tic
 
     m = m_init;
 
@@ -132,17 +147,19 @@ while t<t_final
         m_RK4 = (m_k1+2*m_k2+2*m_k3+m_k4)/6;
         m = m - alpha_val*dt*(m_RK4+m_RK4(mod(-1:N-2,N)+1,:,:)+m_RK4(:,mod(-1:N-2,N)+1,:)+m_RK4(mod(-1:N-2,N)+1,mod(-1:N-2,N)+1,:))/4;
         m = m./(sqrt(sum(m.^2,3))); % Renormalize
-    end
 
 
-    % Coulomb energy
-    coulomb_energy_field = zeros(N,N);
-    parfor i = 1:N
-        for j = 1:N
-            coulomb_energy_field = coulomb_energy_field + rho.*rho(i,j).*energy_dist(:,:,i,j);
+        % Coulomb energy
+        coulomb_energy_field = zeros(N,N);
+        parfor i = 1:N
+            for j = 1:N
+                coulomb_energy_field = coulomb_energy_field + rho.*rho(i,j).*energy_dist(:,:,i,j);
+            end
         end
+        E_C = alpha_val*2*pi*sum(sum(coulomb_energy_field));
+    else
+        E_C = 0;
     end
-    E_C = alpha_val*2*pi*sum(sum(coulomb_energy_field));
 
 
 
@@ -175,23 +192,27 @@ while t<t_final
     m_norm=sqrt(sum(m.^2,3));
     
     % plot
-    quiver(xx,yy,m(:,:,1),m(:,:,2)) % full 2D vector field
+    %quiver(xx,yy,m(:,:,1),m(:,:,2)) % full 2D vector field
     %quiver(xx(:,N/2),zeros(1,N),m(N/2,:,1),m(N/2,:,3))  % 1D slice
-    hold on
+    %hold on
     %quiver(cent_of_mass_x,cent_of_mass_y,st_dev,0,'r')  %radius vector
-    contour(xx(1:N-1,1:N-1)-dx/2,yy(1:N-1,1:N-1)-dy/2,rho(1:N-1,1:N-1),10) % color plot
-    hold off
-    axis([xlow xhigh ylow yhigh])
-    title(t)
-    drawnow
+    %contour(xx(1:N-1,1:N-1)-dx/2,yy(1:N-1,1:N-1)-dy/2,rho(1:N-1,1:N-1),10) % color plot
+    %hold off
+    %axis([xlow xhigh ylow yhigh])
+    %title(t)
+    %drawnow
     
     % reset for new loop
     m_init=m;
     t=t+dt;
     m_full(:,:,:,t_ind) = m;
     rho_full(:,:,t_ind) = rho;
-    t_ind=t_ind+1;
+    t_ind=t_ind+1
+
+    toc
 end
+
+"completed time evolution"
 
 E_total_list = E_B_list+E_LL_list+E_C_list;
 
@@ -208,17 +229,24 @@ legend("S_x","S_y","S_z")
 drawnow
 saveas(gcf,"fig_Spin_components")
 
+
+"created plots"
+
+
 % draw saved data with no lag, can copypaste to console to do again
-for i = 1:t_ind
-    i = i*10;
-    quiver(xx,yy,m_full(:,:,1,i),m_full(:,:,2,i))
-    drawnow
-    saveas(gcf,"zz_quiver_frame"+string(i)+".png")
-    contour(xx(1:N-1,1:N-1)-dx/2,yy(1:N-1,1:N-1)-dy/2,rho_full(1:N-1,1:N-1,i),10) % color plot
-    drawnow
-    saveas(gcf,"zz_contour_frame"+string(i)+".png")
-end
+%for i = 1:(t_ind/10)
+%    i = i*10;
+%    quiver(xx,yy,m_full(:,:,1,i),m_full(:,:,2,i))
+%    drawnow
+%    saveas(gcf,"zz_quiver_frame"+string(i)+".png")
+%    pcolor(xx(1:N-1,1:N-1)-dx/2,yy(1:N-1,1:N-1)-dy/2,rho_full(1:N-1,1:N-1,i)) % color plot
+%    drawnow
+%    saveas(gcf,"zz_contour_frame"+string(i)+".png")
+%end
 
+"drew frames of evolution"
 
+fclose(fileID);
+delete(p);
 
 
