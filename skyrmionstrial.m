@@ -7,7 +7,7 @@ numCores = feature('numcores')
 p = parpool(numCores);
 
 % create bounds of graph
-N=100;
+N=20;
 dx=1;
 dy=1;
 xlow=-(N+1)/2;
@@ -73,7 +73,7 @@ end
 
 
 t=0;
-t_final=50;
+t_final=1;
 dt=0.01;
 t_ind=1;
 El_freq = 5 *2*pi/t_final; %num of cycles * 2pi*t_final
@@ -151,7 +151,7 @@ while t<t_final
 
         % Coulomb energy
         coulomb_energy_field = zeros(N,N);
-        parfor i = 1:N
+        for i = 1:N
             for j = 1:N
                 coulomb_energy_field = coulomb_energy_field + rho.*rho(i,j).*energy_dist(:,:,i,j);
             end
