@@ -1,5 +1,5 @@
 
-function coulomb = coulomb_loop(m_arg,dist_x,dist_y,rho)
+function coulomb = coulomb_parloop(m_arg,dist_x,dist_y,rho)
     N=length(m_arg(:,1,1));
     m_x=(m_arg(3:N,2:N-1,:)-m_arg(1:N-2,2:N-1,:))/(2);
     m_y=(m_arg(2:N-1,3:N,:)-m_arg(2:N-1,1:N-2,:))/(2);

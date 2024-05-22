@@ -4,10 +4,10 @@ fileID = fopen('skyrmionstrial.out','w');
 
 % begin parallelization
 numCores = feature('numcores')
-p = parpool(numCores);
+%p = parpool(numCores);
 
 % create bounds of graph
-N=20;
+N=50;
 dx=1;
 dy=1;
 xlow=-(N+1)/2;
@@ -31,30 +31,16 @@ m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
 
 
 
-% physical constants
-%B_field=1.1;
-%E_field=10.1;
-%q_electron=-3.1;
-%mass_electron=1.1;
-%rho_stiff=1.1;
-%dielectric=1.1;
-%g_factor=2.002;
-%casimir=0.5;
-%nu_level=1.0;
-
-%stiff_val = -rho_stiff*q_electron/(2*pi*casimir*nu_level*B_field);
-%b_val = g_factor*B_field*q_electron/(2*mass_electron);
-%alpha_val = q_electron^3/(8*pi^2*casimir*nu_level*B_field*dielectric);
-%e_val = -q_electron^2*E_field/(8*pi^2*casimir*nu_level*B_field);
-
 %custom parameters, all positive!
 b_val = 0.13;
-stiff_val = 0;
+stiff_val = 1.0;
 e_val = 0;
 alpha_val = 0.7;
 
 % initialize Coulomb distance matrix
 if alpha_val ~= 0
+    dist_x=zeros(N,N,3,N,N);
+    dist_y=zeros(N,N,3,N,N);
     for i = 1:N
         for j = 1:N
             for k = 1:3
@@ -73,7 +59,7 @@ end
 
 
 t=0;
-t_final=1;
+t_final=50;
 dt=0.01;
 t_ind=1;
 El_freq = 5 *2*pi/t_final; %num of cycles * 2pi*t_final
@@ -136,13 +122,13 @@ while t<t_final
 
     % Coulomb term
     if alpha_val ~= 0
-        m_k1=coulomb_loop(m,dist_x,dist_y,rho);
+        m_k1=coulomb_forloop(m,dist_x,dist_y,rho);
         m_k2arg = m + dt/2*m_k1;
-        m_k2=coulomb_loop(m_k2arg,dist_x,dist_y,rho);
+        m_k2=coulomb_forloop(m_k2arg,dist_x,dist_y,rho);
         m_k3arg = m + dt/2*m_k2;
-        m_k3=coulomb_loop(m_k3arg,dist_x,dist_y,rho);
+        m_k3=coulomb_forloop(m_k3arg,dist_x,dist_y,rho);
         m_k4arg = m + dt*m_k3;
-        m_k4=coulomb_loop(m_k4arg,dist_x,dist_y,rho);
+        m_k4=coulomb_forloop(m_k4arg,dist_x,dist_y,rho);
 
         m_RK4 = (m_k1+2*m_k2+2*m_k3+m_k4)/6;
         m = m - alpha_val*dt*(m_RK4+m_RK4(mod(-1:N-2,N)+1,:,:)+m_RK4(:,mod(-1:N-2,N)+1,:)+m_RK4(mod(-1:N-2,N)+1,mod(-1:N-2,N)+1,:))/4;
@@ -207,9 +193,7 @@ while t<t_final
     t=t+dt;
     m_full(:,:,:,t_ind) = m;
     rho_full(:,:,t_ind) = rho;
-    t_ind=t_ind+1
-
-    toc
+    t_ind=t_ind+1toc
 end
 
 "completed time evolution"
@@ -247,6 +231,6 @@ saveas(gcf,"fig_Spin_components")
 "drew frames of evolution"
 
 fclose(fileID);
-delete(p);
+%delete(p);
 
 
