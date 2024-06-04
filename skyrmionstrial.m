@@ -4,7 +4,7 @@ fileID = fopen('skyrmionstrial.out','w');
 
 % begin parallelization
 numCores = feature('numcores')
-%p = parpool(numCores);
+p = parpool(numCores);
 
 % create bounds of graph
 N=50;
@@ -35,7 +35,7 @@ m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
 b_val = 0.13;
 stiff_val = 1.0;
 e_val = 0;
-alpha_val = 0.7;
+alpha_val = 70;
 
 % initialize Coulomb distance matrix
 if alpha_val ~= 0
@@ -178,22 +178,23 @@ while t<t_final
     m_norm=sqrt(sum(m.^2,3));
     
     % plot
-    %quiver(xx,yy,m(:,:,1),m(:,:,2)) % full 2D vector field
+    quiver(xx,yy,m(:,:,1),m(:,:,2)) % full 2D vector field
     %quiver(xx(:,N/2),zeros(1,N),m(N/2,:,1),m(N/2,:,3))  % 1D slice
-    %hold on
+    hold on
     %quiver(cent_of_mass_x,cent_of_mass_y,st_dev,0,'r')  %radius vector
-    %contour(xx(1:N-1,1:N-1)-dx/2,yy(1:N-1,1:N-1)-dy/2,rho(1:N-1,1:N-1),10) % color plot
-    %hold off
-    %axis([xlow xhigh ylow yhigh])
-    %title(t)
-    %drawnow
+    contour(xx(1:N-1,1:N-1)-dx/2,yy(1:N-1,1:N-1)-dy/2,rho(1:N-1,1:N-1),10) % color plot
+    hold off
+    axis([xlow xhigh ylow yhigh])
+    title(t)
+    drawnow
     
     % reset for new loop
     m_init=m;
     t=t+dt;
     m_full(:,:,:,t_ind) = m;
     rho_full(:,:,t_ind) = rho;
-    t_ind=t_ind+1toc
+    t_ind=t_ind+1
+    toc
 end
 
 "completed time evolution"
