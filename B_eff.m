@@ -37,18 +37,20 @@ function B_field = B_eff(m_arg,b_val,stiff_val,El_x,El_y,alpha_val,dist_x,dist_y
         centered_inty = zeros(N-2,N-2);
         for i = 2:N-1
             for j = 2:N-1
+                %full_intx(2:N-1,2:N-1,:) = full_intx(2:N-1,2:N-1,:) + dist_x(2:N-1,2:N-1,i,j)*centered_rho(i-1,j-1);
+                %full_inty(2:N-1,2:N-1,:) = full_inty(2:N-1,2:N-1,:) + dist_y(2:N-1,2:N-1,i,j)*centered_rho(i-1,j-1);
                 centered_intx = centered_intx + dist_x(2:N-1,2:N-1,i,j).*centered_rho(i-1,j-1);
                 centered_inty = centered_inty + dist_y(2:N-1,2:N-1,i,j).*centered_rho(i-1,j-1);
             end
         end
+        %centered_intx = distributed(tensorprod(dist_x(2:N-1,2:N-1,2:N-1,2:N-1),centered_rho(1:N-2,1:N-2),[1 2]));
+        %centered_inty = distributed(tensorprod(dist_y(2:N-1,2:N-1,2:N-1,2:N-1),centered_rho(1:N-2,1:N-2),[1 2]));
         for k = 1:3
             full_intx(2:N-1,2:N-1,k)=centered_intx;
             full_inty(2:N-1,2:N-1,k)=centered_inty;
         end
     end
     B_coulomb=((m_arg(:,:,mod(1:3,3)+1).*m_y(:,:,mod(2:4,3)+1)-m_arg(:,:,mod(2:4,3)+1).*m_y(:,:,mod(1:3,3)+1)).*(El_x*ones(N,N,3)+alpha_val*full_intx) - (m_arg(:,:,mod(1:3,3)+1).*m_x(:,:,mod(2:4,3)+1)-m_arg(:,:,mod(2:4,3)+1).*m_x(:,:,mod(1:3,3)+1)).*(El_y*ones(N,N,3)+alpha_val*full_inty));
-
-    %need to add e field
 
     B_field = B_Zeeman+B_stiffness+B_coulomb;
 

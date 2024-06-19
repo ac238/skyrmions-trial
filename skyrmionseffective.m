@@ -7,13 +7,15 @@ numCores = feature('numcores')
 %p = parpool(numCores);
 
 % create bounds of graph
-N=50;
+N=100;
 dx=1;
 dy=1;
 xlow=-(N+1)/2;
 ylow=-(N+1)/2;
 xhigh=(N-1)/2;
 yhigh=(N-1)/2;
+clow = 0;
+chigh = 0.03;
 [yy,xx]=meshgrid(linspace(xlow,xhigh,N),linspace(ylow,yhigh,N)); %xx and yy are swapped to correspond w/ indices
 axis([xlow xhigh ylow yhigh])
 
@@ -33,11 +35,20 @@ m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
 
 %custom parameters, all positive!
 b_val = 0.13;
-stiff_val = 1.0;
-e_val = 1.1;
-alpha_val = 0.7;
+stiff_val = 30.0;
+e_val = 0;
+alpha_val = 0;
+damp_val = 0.3;
+d_rows=N-4:N;
+damp_mat=zeros(N,N,3);
+for i=1:N
+    for j=N-1:N
+        for k=1:3
+            damp_mat(i,j,k)=damp_val;
+        end
+    end
+end
 
-El_freq = 5 *2*pi/t_final; %num of cycles * 2pi*t_final
 
 % initialize Coulomb distance matrix
 dist_x=zeros(N,N,N,N);
@@ -57,9 +68,12 @@ end
 
 
 t=0;
-t_final=50;
+t_final=500;
 dt=0.01;
 t_ind=1;
+El_freq = 5 *2*pi/t_final; %num of cycles * 2pi*t_final
+magnon_amp = 0.02;
+mag_freq = 2001*2*pi/t_final;
 
 Q_top_list = []; % store values for final plot
 E_B_list = [];
@@ -80,23 +94,36 @@ while t<t_final
     El_x = e_val*cos(El_freq*t);
     El_y = e_val*cos(0.8*El_freq*t);
 
+    % Gilbert damping
+    %for posx = 1:N
+    %    for posy = N-4:N
+    %        m(posx,posy,:) = m(posx,posy,:) - dt*damp_val*(sum(m(posx,posy,:).*B_field_thisstep(posx,posy,:))*m(posx,posy,:)-B_field_thisstep(posx,posy,:));
+    %    end
+    %end
+    %m(1:N,d_rows,:) = m(1:N,d_rows,:) - dt*damp_val*((m(1:N,d_rows,1).*B_field_thisstep(1:N,d_rows,1) + m(1:N,d_rows,2).*B_field_thisstep(1:N,d_rows,2) + m(1:N,d_rows,3).*B_field_thisstep(1:N,d_rows,3)).*m(1:N,d_rows,:)-B_field_thisstep(1:N,d_rows,:));
+
     % RK4
     B_field_thisstep=B_eff(m,b_val,stiff_val,El_x,El_y,alpha_val,dist_x,dist_y,rho);
-    m_k1 = m(:,:,mod(1:3,3)+1).*B_field_thisstep(:,:,mod(2:4,3)+1)-m(:,:,mod(2:4,3)+1).*B_field_thisstep(:,:,mod(1:3,3)+1);
+    m_k1 = m(:,:,mod(1:3,3)+1).*B_field_thisstep(:,:,mod(2:4,3)+1)-m(:,:,mod(2:4,3)+1).*B_field_thisstep(:,:,mod(1:3,3)+1) - damp_mat.*((m(:,:,1).*B_field_thisstep(:,:,1) + m(:,:,2).*B_field_thisstep(:,:,2) + m(:,:,3).*B_field_thisstep(:,:,3)).*m-B_field_thisstep);
 
     m_k2arg=m+dt/2*m_k1;
     B_field=B_eff(m_k2arg,b_val,stiff_val,El_x,El_y,alpha_val,dist_x,dist_y,rho);
-    m_k2 = m_k2arg(:,:,mod(1:3,3)+1).*B_field(:,:,mod(2:4,3)+1)-m_k2arg(:,:,mod(2:4,3)+1).*B_field(:,:,mod(1:3,3)+1);
+    m_k2 = m_k2arg(:,:,mod(1:3,3)+1).*B_field(:,:,mod(2:4,3)+1)-m_k2arg(:,:,mod(2:4,3)+1).*B_field(:,:,mod(1:3,3)+1) - damp_mat.*((m_k2arg(:,:,1).*B_field(:,:,1) + m_k2arg(:,:,2).*B_field(:,:,2) + m_k2arg(:,:,3).*B_field(:,:,3)).*m_k2arg-B_field);
 
     m_k3arg=m+dt/2*m_k2;
     B_field=B_eff(m_k3arg,b_val,stiff_val,El_x,El_y,alpha_val,dist_x,dist_y,rho);
-    m_k3 = m_k3arg(:,:,mod(1:3,3)+1).*B_field(:,:,mod(2:4,3)+1)-m_k3arg(:,:,mod(2:4,3)+1).*B_field(:,:,mod(1:3,3)+1);
+    m_k3 = m_k3arg(:,:,mod(1:3,3)+1).*B_field(:,:,mod(2:4,3)+1)-m_k3arg(:,:,mod(2:4,3)+1).*B_field(:,:,mod(1:3,3)+1) - damp_mat.*((m_k3arg(:,:,1).*B_field(:,:,1) + m_k3arg(:,:,2).*B_field(:,:,2) + m_k3arg(:,:,3).*B_field(:,:,3)).*m_k3arg-B_field);
 
     m_k4arg=m+dt*m_k3;
     B_field=B_eff(m_k4arg,b_val,stiff_val,El_x,El_y,alpha_val,dist_x,dist_y,rho);
-    m_k4 = m_k4arg(:,:,mod(1:3,3)+1).*B_field(:,:,mod(2:4,3)+1)-m_k4arg(:,:,mod(2:4,3)+1).*B_field(:,:,mod(1:3,3)+1);
+    m_k4 = m_k4arg(:,:,mod(1:3,3)+1).*B_field(:,:,mod(2:4,3)+1)-m_k4arg(:,:,mod(2:4,3)+1).*B_field(:,:,mod(1:3,3)+1) - damp_mat.*((m_k4arg(:,:,1).*B_field(:,:,1) + m_k4arg(:,:,2).*B_field(:,:,2) + m_k4arg(:,:,3).*B_field(:,:,3)).*m_k4arg-B_field);
 
     m = m + dt/6*(m_k1+2*m_k2+2*m_k3+m_k4);
+
+    % drive magnons
+    %m(:,1,1) = m(:,1,1) + magnon_amp*cos(mag_freq*t);
+    m(:,1,2) = m(:,1,2) + magnon_amp*cos(mag_freq*t);
+
     m = m./(sqrt(sum(m.^2,3))); % Renormalize
 
 
@@ -117,6 +144,7 @@ while t<t_final
                 coulomb_energy_field = coulomb_energy_field + rho.*rho(i,j).*energy_dist(:,:,i,j);
             end
         end
+        %coulomb_energy_field = distributed(tensorprod(rho,energy_dist,[1 2])).*rho;
         E_C = alpha_val*2*pi*sum(sum(coulomb_energy_field));
     else
         E_C = 0;
@@ -136,17 +164,26 @@ while t<t_final
     % plot
     %quiver(xx,yy,m(:,:,1),m(:,:,2)) % full 2D vector field
     %hold on
-    %contour(xx(1:N-1,1:N-1),yy(1:N-1,1:N-1),rho(1:N-1,1:N-1),10) % color plot
+    %pc=pcolor(xx(1:N-1,1:N-1),yy(1:N-1,1:N-1),rho(1:N-1,1:N-1)); % color plot
+    %pc.EdgeColor='none';
+    %contour(xx(1:N-1,1:N-1),yy(1:N-1,1:N-1),rho(1:N-1,1:N-1),10)
     %hold off
     %axis([xlow xhigh ylow yhigh])
+    %if t==0
+    %    climsave=clim;
+    %else
+    %    clim(climsave);
+    %end
     %title(t)
     %drawnow
     
     % reset for new loop
     m_init=m;
     t=t+dt
-    m_full(:,:,:,t_ind) = m;
-    rho_full(:,:,t_ind) = rho;
+    if mod(t_ind,100)==0
+        m_full(:,:,:,t_ind/100) = m;
+        rho_full(:,:,t_ind/100) = rho;
+    end
     t_ind=t_ind+1;
     toc
 end
@@ -172,14 +209,24 @@ saveas(gcf,"fig_Spin_components")
 "created plots"
 
 % save frames of animation
+contour(xx(1:N-1,1:N-1),yy(1:N-1,1:N-1),rho_full(1:N-1,1:N-1,1),10)
+climsave=clim;
+%contour(xx(1:N-1,1:N-1),yy(1:N-1,1:N-1),m_full(1:N-1,1:N-1,3,1),10)
+%climsave_z=clim;
 for i = 1:(t_ind/100)
-    i = i*100;
     quiver(xx,yy,m_full(:,:,1,i),m_full(:,:,2,i))
     drawnow
     saveas(gcf,"zz_quiver_frame"+string(i)+".png")
-    pcolor(xx(1:N-1,1:N-1)-dx/2,yy(1:N-1,1:N-1)-dy/2,rho_full(1:N-1,1:N-1,i)) % color plot
+    pc=pcolor(xx(1:N-1,1:N-1),yy(1:N-1,1:N-1),rho_full(1:N-1,1:N-1,i)); % color plot
+    pc.EdgeColor='none';
+    clim(climsave);
     drawnow
-    saveas(gcf,"zz_contour_frame"+string(i)+".png")
+    %saveas(gcf,"zz_contour_frame"+string(i)+".png")
+    %pc=pcolor(xx(1:N-1,1:N-1),yy(1:N-1,1:N-1),m_full(1:N-1,1:N-1,3,i)); % color plot
+    %pc.EdgeColor='none';
+    %clim(climsave_z);
+    %drawnow
+    %saveas(gcf,"zz_zspin_frame"+string(i)+".png")
 end
 
 % copypaste this to view animation
