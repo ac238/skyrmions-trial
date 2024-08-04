@@ -1,7 +1,6 @@
 
-function B_field = B_eff(m_arg,b_val,stiff_val,El_x,El_y,alpha_val,dist_x,dist_y,rho)
+function B_field = B_eff_mod(m_arg,b_val,stiff_val,El_x,El_y,alpha_val,dist_x,dist_y,rho)
     N=length(m_arg(:,1,1));
-    N_1=N-1;
     dx=1;
     dy=1;
 
@@ -14,8 +13,8 @@ function B_field = B_eff(m_arg,b_val,stiff_val,El_x,El_y,alpha_val,dist_x,dist_y
     B_stiffness(2:N-1,2:N-1,:) = (m_arg(1:N-2,2:N-1,:)+m_arg(3:N,2:N-1,:)+m_arg(2:N-1,1:N-2,:)+m_arg(2:N-1,3:N,:)-4*m_arg(2:N-1,2:N-1,:))/(dx^2)*stiff_val;
 
     %Coulomb
-    centered_m_x=(m_arg(3:N,:,:)-m_arg(1:N-2,:,:))/(2);  %N-2xNx3
-    centered_m_y=(m_arg(:,3:N,:)-m_arg(:,1:N-2,:))/(2);  %NxN-2x3
+    centered_m_x=(m_arg(3:N,:,:)-m_arg(1:N-2,:,:))/(2);  %N-2xN-2x3
+    centered_m_y=(m_arg(:,3:N,:)-m_arg(:,1:N-2,:))/(2);
     far_edge_m_x = (m_arg(N,:,:)-m_arg(N-1,:,:));
     near_edge_m_x = (m_arg(2,:,:)-m_arg(1,:,:));
     far_edge_m_y = (m_arg(:,N,:)-m_arg(:,N-1,:));
@@ -36,22 +35,16 @@ function B_field = B_eff(m_arg,b_val,stiff_val,El_x,El_y,alpha_val,dist_x,dist_y
         centered_rho = (rho(2:N-1,2:N-1)+rho(1:N-2,2:N-1)+rho(2:N-1,1:N-2)+rho(1:N-2,1:N-2))/4;
         centered_intx = zeros(N-2,N-2);
         centered_inty = zeros(N-2,N-2);
-        %centered_ints_x = zeros(N-2,N-2,N-2,N-2);
-        %centered_ints_y = zeros(N-2,N-2,N-2,N-2);
-        for i = 2:N_1
-            for j = 2:N_1
+        for i = 2:N-1
+            for j = 2:N-1
                 %full_intx(2:N-1,2:N-1,:) = full_intx(2:N-1,2:N-1,:) + dist_x(2:N-1,2:N-1,i,j)*centered_rho(i-1,j-1);
                 %full_inty(2:N-1,2:N-1,:) = full_inty(2:N-1,2:N-1,:) + dist_y(2:N-1,2:N-1,i,j)*centered_rho(i-1,j-1);
-                centered_intx = centered_intx + dist_x(2:N_1,2:N_1,i,j).*centered_rho(i-1,j-1);
-                centered_inty = centered_inty + dist_y(2:N_1,2:N_1,i,j).*centered_rho(i-1,j-1);
-                %centered_ints_x(i,j,:,:) = dist_x(2:N_1,2:N_1,i,j).*centered_rho(i-1,j-1);
-                %centered_ints_y(i,j,:,:) = dist_y(2:N_1,2:N_1,i,j).*centered_rho(i-1,j-1);
+                centered_intx = centered_intx + dist_x(2:N-1,2:N-1,i,j).*centered_rho(i-1,j-1);
+                centered_inty = centered_inty + dist_y(2:N-1,2:N-1,i,j).*centered_rho(i-1,j-1);
             end
         end
         %centered_intx = distributed(tensorprod(dist_x(2:N-1,2:N-1,2:N-1,2:N-1),centered_rho(1:N-2,1:N-2),[1 2]));
         %centered_inty = distributed(tensorprod(dist_y(2:N-1,2:N-1,2:N-1,2:N-1),centered_rho(1:N-2,1:N-2),[1 2]));
-        %centered_intx = sum(sum(centered_ints_x));
-        %centered_inty = sum(sum(centered_ints_y));
         for k = 1:3
             full_intx(2:N-1,2:N-1,k)=centered_intx;
             full_inty(2:N-1,2:N-1,k)=centered_inty;
@@ -62,3 +55,4 @@ function B_field = B_eff(m_arg,b_val,stiff_val,El_x,El_y,alpha_val,dist_x,dist_y
     B_field = B_Zeeman+B_stiffness+B_coulomb;
 
 end
+

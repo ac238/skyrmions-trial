@@ -1,4 +1,4 @@
-
+ 
 % open file to log outputs
 %fileID = fopen('skyrmionstrial.out','w');
 
@@ -7,10 +7,10 @@ numCores = feature('numcores')
 %p = parpool(numCores);
 
 % create bounds of graph
-N=100;
+N=50;
 dx=1;
 dy=1;
-framespace=100;
+framespace=10;
 xlow=-(N+1)/2;
 ylow=-(N+1)/2;
 xhigh=(N-1)/2;
@@ -21,17 +21,17 @@ chigh = 0.03;
 axis([xlow xhigh ylow yhigh])
 
 % initialize skyrmion according to QHMF 35
-n=-1;
+n=1;
 z_0=0;
-lambda=15;
+lambda=5;
 omega = ((xx + yy*1i - z_0)/lambda).^n;
-m_init(:,:,1)=4*real(omega)./((abs(omega)).^2+4);
-m_init(:,:,2)=4*imag(omega)./((abs(omega)).^2+4);
-m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
+%m_init(:,:,1)=4*real(omega)./((abs(omega)).^2+4);
+%m_init(:,:,2)=4*imag(omega)./((abs(omega)).^2+4);
+%m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
 % initialize all vertical
-%m_init(:,:,1)=zeros(N,N);
-%m_init(:,:,2)=zeros(N,N);
-%m_init(:,:,3)=ones(N,N);
+m_init(:,:,1)=zeros(N,N);
+m_init(:,:,2)=zeros(N,N);
+m_init(:,:,3)=ones(N,N);
 % initialize all random
 %m_init(:,:,1)=2*rand(N)-ones(N,N);
 %m_init(:,:,2)=2*rand(N)-ones(N,N);
@@ -50,6 +50,10 @@ m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
 %    m_init(N,i,3)=1;
 %    m_init(i,N,3)=1;
 %end
+% Initialize annealed
+%load("m_final_annealed200.mat");
+%m_init = m;
+
 %m_init = m_init./(sqrt(sum(m_init.^2,3))); % Renormalize
 
 "initialized"
@@ -58,22 +62,22 @@ m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
 
 %custom parameters, all positive!
 b_val = 0.13;
-stiff_val = 30.0;
+stiff_val = 1.0;
 e_val = 0;
-alpha_val = 7.0;
+alpha_val = 0%.7*8*pi;
 damp_val = 0.1;
-d_rows=N-4:N;
-damp_falloff = length(d_rows);
+damp_falloff = 5;
 damp_mat=zeros(N,N,3);
 for i=1:N
     for j=1:N
         for k=1:3
-            %damp_mat(i,j,k)=damp_val*(j-N+5)/5;   %linear
-            %damp_mat(i,j,k)=damp_val*exp((j-N)/damp_falloff);   %exponential
-            damp_mat(i,j,k)=damp_val;   %const everywhere
+            %damp_mat(i,N,k)=damp_val;   %one line
+            damp_mat(i,j,k)=damp_val*exp((j-N)/damp_falloff);   %exponential
+            %damp_mat(i,j,k)=damp_val;   %const everywhere
         end
     end
 end
+%damp_mat(1,1,1)=damp_val;   %corner only!
 
 
 % initialize Coulomb distance matrix
@@ -94,12 +98,12 @@ end
 
 
 t=0;
-t_final=200;
+t_final=1000;
 dt=0.01;
 t_ind=1;
 El_freq = 5 *2*pi/t_final; %num of cycles * 2pi*t_final
-magnon_amp = 0%.01;
-mag_freq = 2001*2*pi/t_final;
+magnon_amp = 1*dt/t_final;
+mag_freq = 201*2*pi/t_final;
 
 Q_top_list = []; % store values for final plot
 E_B_list = [];
@@ -117,9 +121,12 @@ while t<t_final
     tic
     m = m_init;
     rho = pontryagin(m);
-    rho_avg = (rho(:,:)+rho(mod(-1:N-2,N)+1,:)+rho(:,mod(-1:N-2,N)+1)+rho(mod(-1:N-2,N)+1,mod(-1:N-2,N)+1))/4;
+    %rho = DI_Pontryagin(0,m)/(8*pi);
+    %rho_avg = (rho(:,:)+rho(mod(-1:N-2,N)+1,:)+rho(:,mod(-1:N-2,N)+1)+rho(mod(-1:N-2,N)+1,mod(-1:N-2,N)+1))/4;  %oops still periodic
 
     % set electric field
+    B_Zeeman = zeros(N,N,3);
+    B_Zeeman(:,:,3)=b_val*ones(N,N);
     El_x = e_val*cos(El_freq*t);
     El_y = e_val*cos(0.8*El_freq*t);
 
@@ -133,19 +140,35 @@ while t<t_final
 
     % RK4
     B_field_thisstep=B_eff(m,b_val,stiff_val,El_x,El_y,alpha_val,dist_x,dist_y,rho);
-    m_k1 = m(:,:,mod(1:3,3)+1).*B_field_thisstep(:,:,mod(2:4,3)+1)-m(:,:,mod(2:4,3)+1).*B_field_thisstep(:,:,mod(1:3,3)+1) - damp_mat.*((m(:,:,1).*B_field_thisstep(:,:,1) + m(:,:,2).*B_field_thisstep(:,:,2) + m(:,:,3).*B_field_thisstep(:,:,3)).*m-B_field_thisstep);
+    %B_field_thisstep=DI_Beffective2( N, alpha_val, stiff_val, B_Zeeman, zeros(N,N), m);
+    B_mod_thisstep=B_field_thisstep;
+    %B_mod_thisstep(:,:,3)=b_val*ones(N,N);
+    %B_mod_thisstep(:,:,3)=B_mod_thisstep(:,:,3)-b_val*ones(N,N);
+    m_k1 = m(:,:,mod(1:3,3)+1).*B_field_thisstep(:,:,mod(2:4,3)+1)-m(:,:,mod(2:4,3)+1).*B_field_thisstep(:,:,mod(1:3,3)+1) - damp_mat.*((m(:,:,1).*B_mod_thisstep(:,:,1) + m(:,:,2).*B_mod_thisstep(:,:,2) + m(:,:,3).*B_mod_thisstep(:,:,3)).*m-B_mod_thisstep);
 
     m_k2arg=m+dt/2*m_k1;
     B_field=B_eff(m_k2arg,b_val,stiff_val,El_x,El_y,alpha_val,dist_x,dist_y,rho);
-    m_k2 = m_k2arg(:,:,mod(1:3,3)+1).*B_field(:,:,mod(2:4,3)+1)-m_k2arg(:,:,mod(2:4,3)+1).*B_field(:,:,mod(1:3,3)+1) - damp_mat.*((m_k2arg(:,:,1).*B_field(:,:,1) + m_k2arg(:,:,2).*B_field(:,:,2) + m_k2arg(:,:,3).*B_field(:,:,3)).*m_k2arg-B_field);
+    %B_field=DI_Beffective2( N, alpha_val, stiff_val, B_Zeeman, zeros(N,N), m);
+    B_mod=B_field;
+    %B_mod(:,:,3)=b_val*ones(N,N);
+    %B_mod(:,:,3)=B_mod(:,:,3)-b_val*ones(N,N);
+    m_k2 = m_k2arg(:,:,mod(1:3,3)+1).*B_field(:,:,mod(2:4,3)+1)-m_k2arg(:,:,mod(2:4,3)+1).*B_field(:,:,mod(1:3,3)+1) - damp_mat.*((m_k2arg(:,:,1).*B_mod(:,:,1) + m_k2arg(:,:,2).*B_mod(:,:,2) + m_k2arg(:,:,3).*B_mod(:,:,3)).*m_k2arg-B_mod);
 
     m_k3arg=m+dt/2*m_k2;
     B_field=B_eff(m_k3arg,b_val,stiff_val,El_x,El_y,alpha_val,dist_x,dist_y,rho);
-    m_k3 = m_k3arg(:,:,mod(1:3,3)+1).*B_field(:,:,mod(2:4,3)+1)-m_k3arg(:,:,mod(2:4,3)+1).*B_field(:,:,mod(1:3,3)+1) - damp_mat.*((m_k3arg(:,:,1).*B_field(:,:,1) + m_k3arg(:,:,2).*B_field(:,:,2) + m_k3arg(:,:,3).*B_field(:,:,3)).*m_k3arg-B_field);
+    %B_field=DI_Beffective2( N, alpha_val, stiff_val, B_Zeeman, zeros(N,N), m);
+    B_mod=B_field;
+    %B_mod(:,:,3)=b_val*ones(N,N);
+    %B_mod(:,:,3)=B_mod(:,:,3)-b_val*ones(N,N);
+    m_k3 = m_k3arg(:,:,mod(1:3,3)+1).*B_field(:,:,mod(2:4,3)+1)-m_k3arg(:,:,mod(2:4,3)+1).*B_field(:,:,mod(1:3,3)+1) - damp_mat.*((m_k3arg(:,:,1).*B_mod(:,:,1) + m_k3arg(:,:,2).*B_mod(:,:,2) + m_k3arg(:,:,3).*B_mod(:,:,3)).*m_k3arg-B_mod);
 
     m_k4arg=m+dt*m_k3;
     B_field=B_eff(m_k4arg,b_val,stiff_val,El_x,El_y,alpha_val,dist_x,dist_y,rho);
-    m_k4 = m_k4arg(:,:,mod(1:3,3)+1).*B_field(:,:,mod(2:4,3)+1)-m_k4arg(:,:,mod(2:4,3)+1).*B_field(:,:,mod(1:3,3)+1) - damp_mat.*((m_k4arg(:,:,1).*B_field(:,:,1) + m_k4arg(:,:,2).*B_field(:,:,2) + m_k4arg(:,:,3).*B_field(:,:,3)).*m_k4arg-B_field);
+    %B_field=DI_Beffective2( N, alpha_val, stiff_val, B_Zeeman, zeros(N,N), m);
+    B_mod=B_field;
+    %B_mod(:,:,3)=b_val*ones(N,N);
+    %B_mod(:,:,3)=B_mod(:,:,3)-b_val*ones(N,N);
+    m_k4 = m_k4arg(:,:,mod(1:3,3)+1).*B_field(:,:,mod(2:4,3)+1)-m_k4arg(:,:,mod(2:4,3)+1).*B_field(:,:,mod(1:3,3)+1) - damp_mat.*((m_k4arg(:,:,1).*B_mod(:,:,1) + m_k4arg(:,:,2).*B_mod(:,:,2) + m_k4arg(:,:,3).*B_mod(:,:,3)).*m_k4arg-B_mod);
 
     m = m + dt/6*(m_k1+2*m_k2+2*m_k3+m_k4);
 
@@ -155,7 +178,15 @@ while t<t_final
     end
     m(:,1,2) = m(:,1,2) + magnon_amp*cos(mag_freq*t);
 
-    m = m./(sqrt(sum(m.^2,3))); % Renormalize
+
+    % set edges to 0
+    %m(:,1,1:2) = zeros(N,1,2);
+    %m(1,:,1:2) = zeros(1,N,2);
+    %m(:,N,1:2) = zeros(N,1,2);
+    %m(N,:,1:2) = zeros(1,N,2);
+
+    % Renormalize
+    m = m./(sqrt(sum(m.^2,3))); 
 
 
     % check conserved quantities
@@ -183,6 +214,7 @@ while t<t_final
 
     E_B = -b_val*(S_z-N*N);    % B energy
     E_LL = sum(sum(stiff_val/2 * (sum(m_dx.^2+m_dy.^2))));   % stiffness energy
+    %E_Scurve = sum(sum(stiff_val/2 * (sum(m_dx.^2+m_dy.^2))));   % stiffness energy, integrated by parts
     %E_eff = -sum(sum(sum(B_field_thisstep.*m_init))) + b_val*N*N;
 
     Q_top_list(length(Q_top_list)+1)=Q_top;
@@ -215,21 +247,25 @@ while t<t_final
         hold on
         quiver(mean_x,mean_y,st_dev/sqrt(2),st_dev/sqrt(2))
         hold off
+        xlim([-N/2-1 N/2+1])
+        ylim([-N/2-1 N/2+1])
         drawnow
-        saveas(gcf,"zz_quiver_frame"+string(t_ind)+".png")
+        %saveas(gcf,"zz_quiver_frame"+string(t_ind)+".png")
         %pc=pcolor(xx(1:N-1,1:N-1),yy(1:N-1,1:N-1),rho(1:N-1,1:N-1)); % color plot
         %pc.EdgeColor='none';
         %clim(climsave);
+        %colorbar
         %drawnow
         %saveas(gcf,"zz_contour_frame"+string(t_ind)+".png")
-        pc=pcolor(xx(1:N-1,1:N-1),yy(1:N-1,1:N-1),m(1:N-1,1:N-1,3)); % color plot
-        pc.EdgeColor='none';
-        clim(climsave_z);
-        hold on
-        quiver(mean_x,mean_y,st_dev/sqrt(2),st_dev/sqrt(2))
-        hold off
-        drawnow
-        saveas(gcf,"zz_zspin_frame"+string(t_ind)+".png")
+        %pc=pcolor(xx(1:N-1,1:N-1),yy(1:N-1,1:N-1),m(1:N-1,1:N-1,3)); % color plot
+        %pc.EdgeColor='none';
+        %clim(climsave_z);
+        %colorbar
+        %hold on
+        %quiver(mean_x,mean_y,st_dev/sqrt(2),st_dev/sqrt(2))
+        %hold off
+        %drawnow
+        %saveas(gcf,"zz_zspin_frame"+string(t_ind)+".png")
         m_full(:,:,:,t_ind/framespace) = m;
         rho_full(:,:,t_ind/framespace) = rho;
     end
@@ -240,7 +276,7 @@ while t<t_final
     t_ind=t_ind+1;
     toc
 
-    %if t>5
+    %if t>50
     %    magnon_amp=0;
     %end
 end

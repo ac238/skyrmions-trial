@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# running version 5.8
+
+# declare a name for this job to be myjob
+#PBS -N QHFM-new
+
+# mail is sent to you when the job starts and when it terminates or aborts
+#PBS -m bea
+
+# specify your email address
+#PBS -M dgi003@bucknell.edu
+
+#PBS -l nodes=1:ppn=16
+
+#module add openmpi-x86_64
+
+# The following line places you in the directory from which the job was submitted.
+#cd "$PBS_O_WORKDIR"
+#echo "$PBS_JOBID"
+# run the program using the relative path
+
+size=100
+anneal=0
+static=0
+dyn=1
+initcond=0
+sk=1
+skdist=38
+impx=20
+impy=20
+read=0
+bc=2
+Eprotocol=2
+Bprotocol=0
+cpus=37
+U=0
+w=1.1
+B=0.13
+J=1.00
+damping=0.1
+ext=0
+Bamp=5.0
+Bfreq=2.0
+tmax=300
+jobid=parula
+texture= 
+
+# delete mcr cache
+rm -fr ~/.mcrCache9.12/
+nohup ./run_qhfm_v5_8.sh /usr/remote/apps/matlab/current $size $anneal $static $dyn $initcond $sk $skdist $impx $impy $read $bc $Eprotocol $Bprotocol $cpus $U $w $B $J $damping $ext $Bamp $Bfreq $tmax $jobid $texture &
