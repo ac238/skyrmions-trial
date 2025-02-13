@@ -1,13 +1,17 @@
 
-% open file to log outputs
-fileID = fopen('skyrmionstrial.out','w');
 
-% begin parallelization
-numCores = feature('numcores')
-p = parpool(numCores);
+
+% make directory to place files
+jobid = string(datetime)
+[status,msg] = mkdir(jobid)
+cd(jobid)
+
+% open file to log outputs
+fileID = fopen('skyrmions.out','w');
+diary skyrmions.out
 
 % create bounds of graph
-N=50;
+N=100;
 dx=1;
 dy=1;
 xlow=-(N+1)/2;
@@ -22,47 +26,74 @@ n=1;
 z_0=0;
 lambda=5;
 
+m_init=zeros(N,N,3);
+m_init(:,:,3)=ones(N,N);
 omega = ((xx + yy*1i - z_0)/lambda).^n;
-m_init(:,:,1)=4*real(omega)./((abs(omega)).^2+4);
-m_init(:,:,2)=4*imag(omega)./((abs(omega)).^2+4);
-m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
-
-"initialized"
+%m_init(:,:,1)=4*real(omega)./((abs(omega)).^2+4);
+%m_init(:,:,2)=4*imag(omega)./((abs(omega)).^2+4);
+%m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
 
 
+% optional: set boundary spins to +z
+%for i = 1:N
+%    m_init(1,i,:) = [0 0 0];
+%    m_init(i,1,:) = [0 0 0];
+%    m_init(N,i,:) = [0 0 0];
+%    m_init(i,N,:) = [0 0 0];
+%end
 
-%custom parameters, all positive!
-b_val = 0.13;
-stiff_val = 1.0;
-e_val = 0;
-alpha_val = 70;
 
 % initialize Coulomb distance matrix
-if alpha_val ~= 0
-    dist_x=zeros(N,N,3,N,N);
-    dist_y=zeros(N,N,3,N,N);
-    for i = 1:N
-        for j = 1:N
-            for k = 1:3
-                dist_x(:,:,k,i,j) = (xx-xx(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
-                dist_x(i,j,k,i,j) = 0;
-                dist_y(:,:,k,i,j) = (yy-yy(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
-                dist_y(i,j,k,i,j) = 0;
-            end
-            energy_dist(:,:,i,j) = ((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^-0.5;
-            energy_dist(i,j,i,j) = 0;
+for i = 1:N
+    for j = 1:N
+        for k = 1:3
+            dist_x(:,:,k,i,j) = (xx-xx(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
+            dist_x(i,j,k,i,j) = 0;
+            dist_y(:,:,k,i,j) = (yy-yy(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
+            dist_y(i,j,k,i,j) = 0;
         end
+        energy_dist(:,:,i,j) = ((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^-0.5;
+        energy_dist(i,j,i,j) = 0;
     end
 end
 
 
+% physical constants
+B_field=1.1;
+E_field=10.1;
+q_electron=-3.1;
+mass_electron=1.1;
+rho_stiff=1.1;
+dielectric=1.1;
+g_factor=2.002;
+casimir=0.5;
+nu_level=1.0;
+
+stiff_val = -rho_stiff*q_electron/(2*pi*casimir*nu_level*B_field);
+b_val = g_factor*B_field*q_electron/(2*mass_electron);
+alpha_val = q_electron^3/(8*pi^2*casimir*nu_level*B_field*dielectric);
+e_val = -q_electron^2*E_field/(8*pi^2*casimir*nu_level*B_field);
+
+%custom parameters
+b_val = 0.13;
+stiff_val = 1;
+e_val = 2;
+alpha_val = 0;
+damp_val = 0.8
+damp_falloff = 2
+N=100
+magnon_amp = 0.1
+t_final=100
+pointcharge=0
 
 
 t=0;
-t_final=50;
+t_final=100;
 dt=0.01;
 t_ind=1;
-El_freq = 5 *2*pi/t_final; %num of cycles * 2pi*t_final
+framespace=100;
+El_freq = 5 *2*pi/t_final;
+mag_freq = b_val+0.1
 Q_top = -n;
 Q_top_list = []; % store values for final plot
 E_B_list = [];
@@ -70,10 +101,7 @@ E_LL_list = [];
 E_C_list = [];
 Spin_list = [];
 
-
-
 while t<t_final
-    tic
 
     m = m_init;
 
@@ -91,16 +119,20 @@ while t<t_final
     m(:,:,2) = m(:,:,2) + dt/6*(m2_k1 + 2*m2_k2 + 2*m2_k3 + m2_k4);
 
     % Electric field term with RK4
-    m_k1 = (Elec_change_y(m))/(2*dy);
-    m_k2 = (Elec_change_y(m) + dt/2*(Elec_change_y(m_k1)))/(2*dy);
-    m_k3 = (Elec_change_y(m) + dt/2*(Elec_change_y(m_k2)))/(2*dy);
-    m_k4 = (Elec_change_y(m) + dt*(Elec_change_y(m_k3)))/(2*dy);
+    m_k1 = (deriv_center_y(m))/(2*dy);
+    m_k2 = (deriv_center_y(m) + dt/2*(deriv_center_y(m_k1)))/(2*dy);
+    m_k3 = (deriv_center_y(m) + dt/2*(deriv_center_y(m_k2)))/(2*dy);
+    m_k4 = (deriv_center_y(m) + dt*(deriv_center_y(m_k3)))/(2*dy);
 
-    El = e_val*cos(El_freq*t);
-    m = m - El*dt/6*(m_k1 + 2*m_k2 + 2*m_k3 + m_k4);
+    %oscillating
+    %El = e_val*cos(El_freq*t);
+    % gradient
+    El = -e_val.*(yy+N/2)/N;
+
+    m = m + El*dt/6.*(m_k1 + 2*m_k2 + 2*m_k3 + m_k4);
     m = m./(sqrt(sum(m.^2,3))); % Renormalize
 
-    % Stiffness term with RK4 (only works for dx=dy) (doesn't conserve norm=1)
+    % L-L term with RK4 (only works for dx=dy) (doesn't conserve norm=1)
     m_k1 = stiff_val/(dx^2) * (stiffness(m));
     m_k2arg = m+dt/2*m_k1;
     m_k2 = stiff_val/(dx^2) * (stiffness(m_k2arg));
@@ -122,36 +154,36 @@ while t<t_final
 
     % Coulomb term
     if alpha_val ~= 0
-        m_k1=coulomb_forloop(m,dist_x,dist_y,rho);
+        m_k1=coulomb_loop(m,dist_x,dist_y,rho);
         m_k2arg = m + dt/2*m_k1;
-        m_k2=coulomb_forloop(m_k2arg,dist_x,dist_y,rho);
+        m_k2=coulomb_loop(m_k2arg,dist_x,dist_y,rho);
         m_k3arg = m + dt/2*m_k2;
-        m_k3=coulomb_forloop(m_k3arg,dist_x,dist_y,rho);
+        m_k3=coulomb_loop(m_k3arg,dist_x,dist_y,rho);
         m_k4arg = m + dt*m_k3;
-        m_k4=coulomb_forloop(m_k4arg,dist_x,dist_y,rho);
+        m_k4=coulomb_loop(m_k4arg,dist_x,dist_y,rho);
 
         m_RK4 = (m_k1+2*m_k2+2*m_k3+m_k4)/6;
         m = m - alpha_val*dt*(m_RK4+m_RK4(mod(-1:N-2,N)+1,:,:)+m_RK4(:,mod(-1:N-2,N)+1,:)+m_RK4(mod(-1:N-2,N)+1,mod(-1:N-2,N)+1,:))/4;
         m = m./(sqrt(sum(m.^2,3))); % Renormalize
+    end
 
 
-        % Coulomb energy
-        coulomb_energy_field = zeros(N,N);
+    % Coulomb energy
+    coulomb_energy_field = zeros(N,N);
+    if alpha_val ~=0
         for i = 1:N
             for j = 1:N
                 coulomb_energy_field = coulomb_energy_field + rho.*rho(i,j).*energy_dist(:,:,i,j);
             end
         end
-        E_C = alpha_val*2*pi*sum(sum(coulomb_energy_field));
-    else
-        E_C = 0;
     end
+    E_C = alpha_val*2*pi*sum(sum(coulomb_energy_field));
 
 
 
     % check conserved quantities
     Q_top_init = Q_top;
-    Q_top=sum(sum(rho(1:N-1,1:N-1)))*dx*dy;  % topological charge
+    Q_top=sum(sum(rho))*dx*dy;  % topological charge
     S_z=sum(sum(m(:,:,3)));           % total spin in z-direction
     S_x=sum(sum(m(:,:,1)));      
     S_y=sum(sum(m(:,:,2)));      
@@ -166,7 +198,7 @@ while t<t_final
     m_dx=(m(2:N,1:N-1,:)-m(1:N-1,1:N-1,:))/(dx); 
     m_dy=(m(1:N-1,2:N,:)-m(1:N-1,1:N-1,:))/(dy);
 
-    E_B = -b_val*S_z;    % B energy
+    E_B = b_val*S_z;    % B energy
     E_LL = sum(sum(stiff_val/2 * (sum(m_dx.^2+m_dy.^2))));   % stiffness energy
     Q_top_list(length(Q_top_list)+1)=Q_top;
     E_B_list(length(E_B_list)+1)=E_B;
@@ -174,30 +206,45 @@ while t<t_final
     E_C_list(length(E_C_list)+1)=E_C;
     Spin_list(length(Spin_list)+1,:)=[S_x S_y S_z];
 
-    % check norm is preserved
-    m_norm=sqrt(sum(m.^2,3));
+    % drive magnons
+    if magnon_amp ~= 0
+        for i=1:N
+            m(i,1,1) = magnon_amp*sin(mag_freq*t);
+            m(i,1,2) = magnon_amp*cos(mag_freq*t);
+            %diagonal:
+            %m(i,1,1) = magnon_amp*sin(mag_freq*t+i*0.5*pi);
+            %m(i,1,2) = magnon_amp*cos(mag_freq*t+i*0.5*pi);
+            %charged:
+            %m(i,1,1) = cos(kappay.*yy(i,1)-mag_freq*t)*sin(kappax.*xx(i,1));
+            %m(i,1,2) = cos(kappay.*yy(i,1)-mag_freq*t)*cos(kappax.*xx(i,1));
+            %m(i,1,3) = sin(kappay.*yy(i,1)-mag_freq*t);
+        end
+    end
+
+    % Renormalize
+    m = m./(sqrt(sum(m.^2,3))); 
     
     % plot
-    quiver(xx,yy,m(:,:,1),m(:,:,2)) % full 2D vector field
-    %quiver(xx(:,N/2),zeros(1,N),m(N/2,:,1),m(N/2,:,3))  % 1D slice
-    hold on
-    %quiver(cent_of_mass_x,cent_of_mass_y,st_dev,0,'r')  %radius vector
-    contour(xx(1:N-1,1:N-1)-dx/2,yy(1:N-1,1:N-1)-dy/2,rho(1:N-1,1:N-1),10) % color plot
-    hold off
-    axis([xlow xhigh ylow yhigh])
-    title(t)
-    drawnow
+    if mod(t_ind,framespace)==0
+        quiver(xx,yy,m(:,:,1),m(:,:,2)) % full 2D vector field
+        %quiver(xx(:,N/2),zeros(1,N),m(N/2,:,1),m(N/2,:,3))  % 1D slice
+        %hold on
+        %quiver(cent_of_mass_x,cent_of_mass_y,st_dev,0,'r')  %radius vector
+        %contour(xx(1:N-1,1:N-1)-dx/2,yy(1:N-1,1:N-1)-dy/2,rho_avg(1:N-1,1:N-1),10) % color plot
+        %hold off
+        axis([xlow xhigh ylow yhigh])
+        drawnow
+        exportgraphics(gcf,"quiver.gif",'Append',true)
+    end
     
     % reset for new loop
     m_init=m;
-    t=t+dt;
+    t=t+dt
     m_full(:,:,:,t_ind) = m;
     rho_full(:,:,t_ind) = rho;
-    t_ind=t_ind+1
-    toc
+    t_ind=t_ind+1;
 end
 
-"completed time evolution"
 
 E_total_list = E_B_list+E_LL_list+E_C_list;
 
@@ -213,25 +260,34 @@ plot((1:length(Spin_list(:,1)))*dt,Spin_list(:,1),(1:length(Spin_list(:,2)))*dt,
 legend("S_x","S_y","S_z")
 drawnow
 saveas(gcf,"fig_Spin_components")
+%plot((1:length(mean_x_list))*dt,mean_x_list,(1:length(mean_y_list))*dt,mean_y_list,(1:length(stdev_list))*dt,stdev_list)
+%legend("mean_x","mean_y","stdev")
+%drawnow
+%saveas(gcf,"fig_Pos_radius")
 
-
-"created plots"
-
-
-% draw saved data with no lag, can copypaste to console to do again
-%for i = 1:(t_ind/10)
-%    i = i*10;
-%    quiver(xx,yy,m_full(:,:,1,i),m_full(:,:,2,i))
-%    drawnow
-%    saveas(gcf,"zz_quiver_frame"+string(i)+".png")
-%    pcolor(xx(1:N-1,1:N-1)-dx/2,yy(1:N-1,1:N-1)-dy/2,rho_full(1:N-1,1:N-1,i)) % color plot
-%    drawnow
-%    saveas(gcf,"zz_contour_frame"+string(i)+".png")
-%end
-
-"drew frames of evolution"
 
 fclose(fileID);
 %delete(p);
+cd ..
 
 
+
+
+function E_field = deriv_center_y(m)
+    N=length(m(:,1,1));
+    centered_m = m(:,mod(0:N-3,N)+1,:)-m(:,mod(2:N-1,N)+1,:);
+    E_field = zeros(N,N,3);
+    E_field(:,2:N-1,:)=centered_m;
+end
+
+
+function stiff = stiffness(m)
+    N=length(m(:,1,1));
+    stiffed_m = m(1:N,1:N,mod(1:3,3)+1).*(m(mod(-1:N-2,N)+1,1:N,mod(2:4,3)+1)+m(mod(1:N,N)+1,1:N,mod(2:4,3)+1)+m(1:N,mod(-1:N-2,N)+1,mod(2:4,3)+1)+m(1:N,mod(1:N,N)+1,mod(2:4,3)+1)-4*m(1:N,1:N,mod(2:4,3)+1)) - m(1:N,1:N,mod(2:4,3)+1).*(m(mod(-1:N-2,N)+1,1:N,mod(1:3,3)+1)+m(mod(1:N,N)+1,1:N,mod(1:3,3)+1)+m(1:N,mod(-1:N-2,N)+1,mod(1:3,3)+1)+m(1:N,mod(1:N,N)+1,mod(1:3,3)+1)-4*m(1:N,1:N,mod(1:3,3)+1));
+    wrapped_m = m(1:N,2:N-1,mod(1:3,3)+1).*(m(mod(-1:N-2,N)+1,2:N-1,mod(2:4,3)+1)+m(mod(1:N,N)+1,2:N-1,mod(2:4,3)+1)+m(1:N,mod(0:N-3,N)+1,mod(2:4,3)+1)+m(1:N,mod(2:N-1,N)+1,mod(2:4,3)+1)-4*m(1:N,2:N-1,mod(2:4,3)+1)) - m(1:N,2:N-1,mod(2:4,3)+1).*(m(mod(-1:N-2,N)+1,2:N-1,mod(1:3,3)+1)+m(mod(1:N,N)+1,2:N-1,mod(1:3,3)+1)+m(1:N,mod(0:N-3,N)+1,mod(1:3,3)+1)+m(1:N,mod(2:N-1,N)+1,mod(1:3,3)+1)-4*m(1:N,2:N-1,mod(1:3,3)+1));
+    centered_m = m(2:N-1,2:N-1,mod(1:3,3)+1).*(m(mod(0:N-3,N)+1,2:N-1,mod(2:4,3)+1)+m(mod(2:N-1,N)+1,2:N-1,mod(2:4,3)+1)+m(2:N-1,mod(0:N-3,N)+1,mod(2:4,3)+1)+m(2:N-1,mod(2:N-1,N)+1,mod(2:4,3)+1)-4*m(2:N-1,2:N-1,mod(2:4,3)+1)) - m(2:N-1,2:N-1,mod(2:4,3)+1).*(m(mod(0:N-3,N)+1,2:N-1,mod(1:3,3)+1)+m(mod(2:N-1,N)+1,2:N-1,mod(1:3,3)+1)+m(2:N-1,mod(0:N-3,N)+1,mod(1:3,3)+1)+m(2:N-1,mod(2:N-1,N)+1,mod(1:3,3)+1)-4*m(2:N-1,2:N-1,mod(1:3,3)+1));
+    stiff = zeros(N,N,3);
+    %stiff(2:N-1,2:N-1,:)=centered_m;
+    stiff(:,2:N-1,:)=wrapped_m;
+    %stiff = stiffed_m;
+end

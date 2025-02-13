@@ -15,14 +15,14 @@ numCores = feature('numcores')
 numCores = 5
 b_val = 0.13
 stiff_val = 1.0
-e_val = 10
-alpha_val = 0
-damp_val = 0.8
+e_val = 25
+alpha_val = 25
+damp_val = 0%.8
 damp_falloff = 2
-N=100
-magnon_amp = 0.25
+N=50
+magnon_amp = 0%.1
 t_final=100
-pointcharge=0
+pointcharge=1
 
 % begin parallelization
 %p = parpool(numCores);
@@ -42,16 +42,16 @@ axis([xlow xhigh ylow yhigh])
 % initialize skyrmion according to QHMF 35
 n=1;
 z_0=0;
-lambda=5;
+lambda=3;
 omega = ((xx + yy*1i - z_0)/lambda).^n;
 %omega = (((xx + yy*1i - z_0*ones(N,N))/lambda).^n).*(((xx + yy*1i + z_0*ones(N,N))/lambda).^1);
 % initialize all vertical
 m_init(:,:,1)=zeros(N,N);
 m_init(:,:,2)=zeros(N,N);
 m_init(:,:,3)=ones(N,N);
-%m_init(:,:,1)=4*real(omega)./((abs(omega)).^2+4);
-%m_init(:,:,2)=4*imag(omega)./((abs(omega)).^2+4);
-%m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
+m_init(:,:,1)=4*real(omega)./((abs(omega)).^2+4);
+m_init(:,:,2)=4*imag(omega)./((abs(omega)).^2+4);
+m_init(:,:,3)=((abs(omega)).^2-4)./((abs(omega)).^2+4);
 % initialize all random
 %m_init(:,:,1)=2*rand(N)-ones(N,N);
 %m_init(:,:,2)=2*rand(N)-ones(N,N);
@@ -106,10 +106,6 @@ energy_distL=zeros(N,N,N,N);
 if alpha_val ~= 0
     for i = 1:N
         for j = 1:N
-            %dist_x(:,:,i,j) = (xx-xx(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
-            %dist_x(i,j,i,j) = 0;
-            %dist_y(:,:,i,j) = (yy-yy(i,j))./(((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^1.5);
-            %dist_y(i,j,i,j) = 0;
             energy_dist(i,j,:,:) = ((xx-xx(i,j)).^2+(yy-yy(i,j)).^2).^-0.5;
             energy_dist(i,j,i,j) = 0;
         end
@@ -128,8 +124,16 @@ t=0;
 dt=0.01;
 t_ind=1;
 El_freq = 5 *2*pi/t_final; %num of cycles * 2pi*t_final
-El_rad = 10;
-El_depth = 1;
+El_rad = 5;
+V_ext = e_val.*exp(-(xx.^2+yy.^2)/(2*(El_rad^2))); %Gaussian
+rho = pontryagin(m_init);
+center_rho = rho(2:N-1,2:N-1);
+for i = 1:N  %exact match
+    for j = 1:N
+        V_ext(i,j) = -e_val*sum(sum(center_dist(:,:,i,j).*center_rho));
+    end
+end
+
 mag_freq = b_val+2
 kappax=2*pi*0.1;
 kappay=2*pi*0.11;
@@ -159,17 +163,12 @@ while t<t_final
     %rho_avg = (rho(:,:)+rho(mod(-1:N-2,N)+1,:)+rho(:,mod(-1:N-2,N)+1)+rho(mod(-1:N-2,N)+1,mod(-1:N-2,N)+1))/4;  %oops still periodic
 
     % set electric field
-    El_x=0;
-    %El_y=0;
     % oscillating
     %El_x = e_val*cos(El_freq*t);
-    %El_y = e_val*sin(El_freq*t);
+    %El_y = e_val*cos(0.8*El_freq*t);
     % Gaussian
-    %El_x = e_val*El_depth/(El_rad^2)*yy.*exp(-(xx.^2+yy.^2)/(2*(El_rad^2)));
-    %El_y = e_val*El_depth/(El_rad^2)*xx.*exp(-(xx.^2+yy.^2)/(2*(El_rad^2)));
-    % gradient
-    %El_x = e_val.*(yy+N/2)/N;
-    El_y = -e_val*t/t_final;
+    El_x = e_val/(El_rad^2)*yy.*exp(-(xx.^2+yy.^2)/(2*(El_rad^2)));
+    El_y = e_val/(El_rad^2)*xx.*exp(-(xx.^2+yy.^2)/(2*(El_rad^2)));
 
     % Gilbert damping
     %for posx = 1:N
@@ -180,25 +179,25 @@ while t<t_final
     %m(1:N,d_rows,:) = m(1:N,d_rows,:) - dt*damp_val*((m(1:N,d_rows,1).*B_field_thisstep(1:N,d_rows,1) + m(1:N,d_rows,2).*B_field_thisstep(1:N,d_rows,2) + m(1:N,d_rows,3).*B_field_thisstep(1:N,d_rows,3)).*m(1:N,d_rows,:)-B_field_thisstep(1:N,d_rows,:));
 
     % RK4
-    B_field_thisstep=B_eff_solid(m,b_val,stiff_val,El_x,El_y,alpha_val,energy_distL,center_dist,sliced_dist);
+    B_field_thisstep=B_eff_solid(m,b_val,stiff_val,V_ext,alpha_val,energy_distL,center_dist,sliced_dist);
     %B_field_thisstep=DI_Beffective2( N, alpha_val, stiff_val, B_Zeeman, zeros(N,N), m);
     B_mod_thisstep=B_field_thisstep;
     m_k1 = m(:,:,mod(1:3,3)+1).*B_field_thisstep(:,:,mod(2:4,3)+1)-m(:,:,mod(2:4,3)+1).*B_field_thisstep(:,:,mod(1:3,3)+1) - damp_mat.*((m(:,:,1).*B_mod_thisstep(:,:,1) + m(:,:,2).*B_mod_thisstep(:,:,2) + m(:,:,3).*B_mod_thisstep(:,:,3)).*m-B_mod_thisstep);
 
     m_k2arg=m+dt/2*m_k1;
-    B_field=B_eff_solid(m_k2arg,b_val,stiff_val,El_x,El_y,alpha_val,energy_distL,center_dist,sliced_dist);
+    B_field=B_eff_solid(m_k2arg,b_val,stiff_val,V_ext,alpha_val,energy_distL,center_dist,sliced_dist);
     %B_field=DI_Beffective2( N, alpha_val, stiff_val, B_Zeeman, zeros(N,N), m_k2arg);
     B_mod=B_field;
     m_k2 = m_k2arg(:,:,mod(1:3,3)+1).*B_field(:,:,mod(2:4,3)+1)-m_k2arg(:,:,mod(2:4,3)+1).*B_field(:,:,mod(1:3,3)+1) - damp_mat.*((m_k2arg(:,:,1).*B_mod(:,:,1) + m_k2arg(:,:,2).*B_mod(:,:,2) + m_k2arg(:,:,3).*B_mod(:,:,3)).*m_k2arg-B_mod);
 
     m_k3arg=m+dt/2*m_k2;
-    B_field=B_eff_solid(m_k3arg,b_val,stiff_val,El_x,El_y,alpha_val,energy_distL,center_dist,sliced_dist);
+    B_field=B_eff_solid(m_k3arg,b_val,stiff_val,V_ext,alpha_val,energy_distL,center_dist,sliced_dist);
     %B_field=DI_Beffective2( N, alpha_val, stiff_val, B_Zeeman, zeros(N,N), m_k3arg);
     B_mod=B_field;
     m_k3 = m_k3arg(:,:,mod(1:3,3)+1).*B_field(:,:,mod(2:4,3)+1)-m_k3arg(:,:,mod(2:4,3)+1).*B_field(:,:,mod(1:3,3)+1) - damp_mat.*((m_k3arg(:,:,1).*B_mod(:,:,1) + m_k3arg(:,:,2).*B_mod(:,:,2) + m_k3arg(:,:,3).*B_mod(:,:,3)).*m_k3arg-B_mod);
 
     m_k4arg=m+dt*m_k3;
-    B_field=B_eff_solid(m_k4arg,b_val,stiff_val,El_x,El_y,alpha_val,energy_distL,center_dist,sliced_dist);
+    B_field=B_eff_solid(m_k4arg,b_val,stiff_val,V_ext,alpha_val,energy_distL,center_dist,sliced_dist);
     %B_field=DI_Beffective2( N, alpha_val, stiff_val, B_Zeeman, zeros(N,N), m_k4arg);
     B_mod=B_field;
     m_k4 = m_k4arg(:,:,mod(1:3,3)+1).*B_field(:,:,mod(2:4,3)+1)-m_k4arg(:,:,mod(2:4,3)+1).*B_field(:,:,mod(1:3,3)+1) - damp_mat.*((m_k4arg(:,:,1).*B_mod(:,:,1) + m_k4arg(:,:,2).*B_mod(:,:,2) + m_k4arg(:,:,3).*B_mod(:,:,3)).*m_k4arg-B_mod);
@@ -256,7 +255,7 @@ while t<t_final
 
     E_B = -b_val*(S_z-N*N);    % B energy
     E_LL = sum(sum(stiff_val/2 * (sum(m_dx.^2+m_dy.^2))));   % stiffness energy
-    E_El = sum(sum(rho*e_val*El_depth.*exp(-(xx.^2+yy.^2)/(2*(El_rad^2))))); % electric field potential energy (Gaussian)
+    E_El = sum(sum(rho.*V_ext)); % electric field potential energy (Gaussian)
     E_eff = -sum(sum(sum(B_field_thisstep.*m_init))) + b_val*N*N;
     %general energy loss %warning: backward derivative
     E_loss1 = E_loss1 + sum(sum(sum(B_field_thisstep.*dmdt)))*dt; 
@@ -290,7 +289,7 @@ while t<t_final
     if t_ind==1
         contour(xx(1:N-1,1:N-1),yy(1:N-1,1:N-1),rho(1:N-1,1:N-1),10)
         climsave=clim;
-        climsave=[-0.001 0.001]; %for charged magnons
+        %climsave=[-0.0001 0.0001]; %for charged magnons
         contour(xx(1:N-1,1:N-1),yy(1:N-1,1:N-1),m(1:N-1,1:N-1,3),10)
         climsave_z=[-1 1];
     end
@@ -410,7 +409,7 @@ cd ..
 
 
 
-function B_field = B_eff_solid(m_arg,b_val,stiff_val,El_x,El_y,alpha_val,energy_dist,center_dist,sliced_dist)
+function B_field = B_eff_solid(m_arg,b_val,stiff_val,V_ext,alpha_val,energy_dist,center_dist,sliced_dist)
     N=length(m_arg(:,1,1));
     N_1=N-1;
     dx=1;
@@ -424,9 +423,9 @@ function B_field = B_eff_solid(m_arg,b_val,stiff_val,El_x,El_y,alpha_val,energy_
     %Stiffness
     B_stiffness=zeros(N,N,3);
     %Centered stiffness:
-    %B_stiffness(2:N-1,2:N-1,:) = (m_arg(1:N-2,2:N-1,:)+m_arg(3:N,2:N-1,:)+m_arg(2:N-1,1:N-2,:)+m_arg(2:N-1,3:N,:)-4*m_arg(2:N-1,2:N-1,:))/(dx^2)*stiff_val;
+    B_stiffness(2:N-1,2:N-1,:) = (m_arg(1:N-2,2:N-1,:)+m_arg(3:N,2:N-1,:)+m_arg(2:N-1,1:N-2,:)+m_arg(2:N-1,3:N,:)-4*m_arg(2:N-1,2:N-1,:))/(dx^2)*stiff_val;
     %Wrapped stiffness:
-    B_stiffness(:,2:N-1,:) = (m_arg(mod(-1:N-2,N)+1,2:N-1,:)+m_arg(mod(1:N,N)+1,2:N-1,:)+m_arg(:,1:N-2,:)+m_arg(:,3:N,:)-4*m_arg(:,2:N-1,:))/(dx^2)*stiff_val;
+    %B_stiffness(:,2:N-1,:) = (m_arg(mod(-1:N-2,N)+1,2:N-1,:)+m_arg(mod(1:N,N)+1,2:N-1,:)+m_arg(:,1:N-2,:)+m_arg(:,3:N,:)-4*m_arg(:,2:N-1,:))/(dx^2)*stiff_val;
 
     %Coulomb
     centered_int = zeros(N,N);
@@ -473,6 +472,8 @@ function B_field = B_eff_solid(m_arg,b_val,stiff_val,El_x,El_y,alpha_val,energy_
     %        %centered_intxy(i,j) = 1*energy_dist(51,51,i,j);
     %    end
     %end
+
+    centered_int = centered_int + V_ext;
    
     for k=1:3
         full_int(:,:,k)=centered_int;
@@ -497,9 +498,10 @@ function B_field = B_eff_solid(m_arg,b_val,stiff_val,El_x,El_y,alpha_val,energy_
     %B_coulomb=-4*pi*alpha_val*(centered_int.*pontryagin_deriv(m_arg,1,1) - circshift(centered_int,[1 0]).*pontryagin_deriv(m_arg,-1,1) - circshift(centered_int,[0 1]).*pontryagin_deriv(m_arg,1,-1) + circshift(centered_int,[1 1]).*pontryagin_deriv(m_arg,-1,-1));
     B_coulomb=-4*pi*(full_int.*pontryagin_deriv2(m_arg,1,1) - full_intx.*pontryagin_deriv2(m_arg,-1,1) - full_inty.*pontryagin_deriv2(m_arg,1,-1) + full_intxy.*pontryagin_deriv2(m_arg,-1,-1));
 
-    B_electric = (El_x+El_y).*pontryagin_deriv2(m_arg,1,1) + (-El_x+El_y).*pontryagin_deriv2(m_arg,-1,1) + (El_x-El_y).*pontryagin_deriv2(m_arg,1,-1) + (-El_x-El_y).*pontryagin_deriv2(m_arg,-1,-1);
+    %B_electric = (El_x+El_y).*pontryagin_deriv2(m_arg,1,1) + (-El_x+El_y).*pontryagin_deriv2(m_arg,-1,1) + (El_x-El_y).*pontryagin_deriv2(m_arg,1,-1) + (-El_x-El_y).*pontryagin_deriv2(m_arg,-1,-1);
 
-    B_field = B_Zeeman+B_stiffness+B_coulomb+B_electric;
+    B_field = B_Zeeman+B_stiffness+B_coulomb;
+    %B_field = B_Zeeman+B_stiffness+B_coulomb+B_electric;
 
 end
 
